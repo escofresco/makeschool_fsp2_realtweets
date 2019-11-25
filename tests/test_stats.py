@@ -9,8 +9,8 @@ import numpy as np
 from grams.stats import Distro, Sample
 from grams.utils import generate_samples, randints
 
-from tests.data import (no_word_data, one_word_data, small_data, small_uniform_data,
-                   DISTRO_DISTANCE_THRESHOLD)
+from tests.data import (no_word_data, one_word_data, small_data,
+                        small_uniform_data, DISTRO_DISTANCE_THRESHOLD)
 
 
 class StatsTestSuite(unittest.TestCase):
@@ -149,7 +149,7 @@ class StatsTestSuite(unittest.TestCase):
         self.assertEqual(distro.get("asdf"), None)
 
         # check non-existence word default to explicit val
-        self.assertEqual(distro.get("asdf", 0), 1)
+        self.assertEqual(distro.get("asdf", 0), 0)
         self.assertEqual(distro.get("asdf", "Mumble"), "Mumble")
 
     def test_repr(self):
