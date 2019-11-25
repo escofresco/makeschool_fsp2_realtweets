@@ -7,12 +7,7 @@ import unittest
 import numpy as np
 
 from grams.stats import Distro
-from grams.utils import (binsearch, invert_dict, generate_samples,
-                         histogram_similarity, ismethod, LogMethodCalls,
-                         map_to_binary, merge_nonsequentials_containing_ints,
-                         merge_data_containing_ints,
-                         merge_sequentials_containing_ints, p, randints,
-                         sample_size)
+from grams.utils import *
 from tests.data import small_data
 
 
@@ -384,3 +379,87 @@ class UtilsTestSuite(unittest.TestCase):
             merge_data_containing_ints(
                 (("apple", 1), ("apple", 2), ("orange", 50)),
                 (("mango", 4), )))
+
+    def test_capture_stdout(self):
+        expected = "boot moot root"
+
+        def f():
+            print(expected)
+
+        # check for no args, kwargs
+        actual = capture_stdout(f)
+        self.assertEqual(expected + "\n", actual)
+
+        def f(a, b):
+            print(f" {a} {b} ".join(expected.split(" ")))
+
+        # check for args
+        actual = capture_stdout(f, "has", "a")
+        self.assertEqual("boot has a moot has a root\n", actual)
+
+        def f(a="has", b="a"):
+            print(f" {a} {b} ".join(expected.split(" ")))
+
+        # check for kwargs
+        actual = capture_stdout(f, a="has", b="a")
+        self.assertEqual("boot has a moot has a root\n", actual)
+
+    def test_capture_stdout_edges(self):
+        expected = ""
+
+        def f(a, b):
+            c = a + b
+
+        # check null case
+        actual = capture_stdout(f, 123213, 78347683428.)
+        self.assertEqual(expected, actual)
+
+        actual = capture_stdout(exec, "import sys")
+        self.assertEqual(expected, actual)
+
+
+#
+# class TestInlineCodeRunner(unittest.TestCase):
+#     def test_separate_line_code(self):
+#         out = "I have a normal grapefruit"
+#         code = f"print('{out}')"
+#         expected = "\n".join((code, out)) + "\n"
+#
+#         # check that output is inserted outside code symbols
+#         it = ("|><|", code, "|><|", "|<>|")
+#         actual = run_code(it)
+#         self.assertEqual(expected, actual)
+#
+#         # check that output is inserted outside code symbols
+#         it = ("|><|", code, "|<>|", "|><|")
+#         actual = run_code(it)
+#         self.assertEqual(expected, actual)
+#
+#         # check several outputs with first print statement not adding newline
+#         it = ("|><|", "print('I have a normal grapefruit')", "print('123')",
+#               "|><|", "|<>|")
+#         actual = run_code(it)
+#         expected = "print('I have a normal grapefruit')\nprint('123')\n123\n"
+#         self.assertEqual(expected, actual)
+#
+#         it = (
+#             "Some things here.",
+#             "Some things there.",
+#             "|><|",
+#         )
+#         with self.assertRaises(ValueError):
+#             run_code(it)
+#
+#         it = (*it, "import sys")
+#         expected = ("Some things here.", "Some things there.", "import sys",)
+#         actual = run_code(it)
+#         self.assertEqual("\n".join(expected), actual)
+#
+#         it = (*it,
+#               "sys.stdout.write('Tiny oranges\n')",
+#               "sys.stdout.flush()",)
+#         expected = ("Some things here.", "Some things there.", "import sys",
+#                     "sys.stdout.write('Tiny oranges\n')", "sys.stdout.flush()",
+#                     "")
+#         # actual = run_code(it)
+#         # self.assertEqual("\n".join(expected), actual)
