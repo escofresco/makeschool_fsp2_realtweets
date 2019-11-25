@@ -1,0 +1,34 @@
+#!/bin/sh
+
+NEWLINE=$'\n'
+MSG_DECOR="~~~~~~~"
+ERRMSG_PREFIX="${MSG_DECOR} Whoops! git push validation failed :0 \
+${MSG_DECOR}${NEWLINE}"
+
+# run tests under coverage before push
+coverage run -m unittest discover tests
+
+# this is the exit code of the last command
+COV_EXITCODE=$?
+
+if [ $COV_EXITCODE -eq 0 ]
+  # tests succeeded
+  then
+    # generate an updated README.md
+    python makereadme.py
+
+    # this is the exit code of the last command
+    MAKEREADME_EXITCODE=$?
+
+    if [ $MAKEREADME_EXITCODE -eq 0 ]
+      then
+        # tests and readme generation were successful
+        exit 0
+    fi
+    # running makereadme.py failed
+    echo "${ERRMSG_PREFIX}README.md couldn't be updated"
+    exit 1
+fi
+
+echo "${ERRMSG_PREFIX}testrunner failed :("
+exit 1
