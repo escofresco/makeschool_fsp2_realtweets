@@ -1,0 +1,8 @@
+recursive-exclude tests *
+recursive-exclude res *
+exclude app.py
+exclude dictionary_words.py
+exclude Procfile
+exclude python_quote.py
+exclude rearrange.py
+exclude runtime.txt
