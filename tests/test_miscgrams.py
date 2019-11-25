@@ -1,3 +1,4 @@
+from collections import Counter
 from contextlib import redirect_stdout
 from io import StringIO
 from os import mkdir, rmdir
@@ -7,7 +8,8 @@ import unittest
 
 from coverage import CoverageData
 
-from grams import Covergram, Gram, Distro
+from grams.grams import Covergram, Gram, Distro
+from grams.utils import capture_stdout
 
 
 class GramTestSuite(unittest.TestCase):
@@ -105,16 +107,12 @@ class GramTestSuite(unittest.TestCase):
         lgram = Gram([['one', 1], ['fish', 4], ['two', 1], ['red', 1],
                       ['blue', 1]])
         expected = "\nblue: ▇ 1.00 \nfish: ▇▇▇▇ 4.00 \none : ▇ 1.00 \nred : ▇ 1.00 \ntwo : ▇ 1.00 \n\n"
-        f = StringIO()
-        with redirect_stdout(f):
-            # dgram.visualize()
-            # self.assertEqual(expected, f.getvalue())
-            # f.__init__()
-            tgram.visualize()
-            self.assertEqual(expected, f.getvalue())
-            f.__init__()
-            lgram.visualize()
-            self.assertEqual(expected, f.getvalue())
+
+        self.assertCountEqual(
+            Counter(expected.split(" ")),
+            Counter(capture_stdout(dgram.visualize).split(" ")))
+        self.assertEqual(expected, capture_stdout(tgram.visualize))
+        self.assertEqual(expected, capture_stdout(lgram.visualize))
 
     def test_not_implemented(self):
 
@@ -139,7 +137,6 @@ class CovergramTestSuite(unittest.TestCase):
         self.dummy_cov_filepath = join(self.tempdir, ".coverage")
         #self.coverage_data = self.make_coveragedata_from_file(self.dummy_cov_filepath)
 
-
     # def __del__(self):
     #     rmdir(self.tempdir)
 
@@ -155,7 +152,7 @@ class CovergramTestSuite(unittest.TestCase):
 
         ### coverage needs actual module files, so generate them
         self.coverage_data = CoverageData()
-        self.coverage_data.add_lines(dict(((module_to_line[0]),)))
+        self.coverage_data.add_lines(dict(((module_to_line[0]), )))
         self.make_file(
             module_to_line[0][0], """
                        x = 1
@@ -169,7 +166,7 @@ class CovergramTestSuite(unittest.TestCase):
                        assert z == 3
                        """)
 
-        self.coverage_data.add_lines(dict(((module_to_line[1]),)))
+        self.coverage_data.add_lines(dict(((module_to_line[1]), )))
         self.make_file(
             module_to_line[1][0], """
 
@@ -185,13 +182,13 @@ class CovergramTestSuite(unittest.TestCase):
 
                        """)
 
-        self.coverage_data.add_lines(dict(((module_to_line[2]),)))
+        self.coverage_data.add_lines(dict(((module_to_line[2]), )))
         self.make_file(
             module_to_line[2][0], """
 
                        assert True is True
                        """)
-        self.coverage_data.add_lines(dict(((module_to_line[3]),)))
+        self.coverage_data.add_lines(dict(((module_to_line[3]), )))
         self.make_file(
             module_to_line[3][0], """
                         a = b = c = 3
@@ -203,9 +200,8 @@ class CovergramTestSuite(unittest.TestCase):
                         l.pop()
                         assert l is ll is lll
                        """)
-        self.coverage_data.add_lines(dict(((module_to_line[4]),)))
-        self.make_file(
-            module_to_line[4][0], "")
+        self.coverage_data.add_lines(dict(((module_to_line[4]), )))
+        self.make_file(module_to_line[4][0], "")
 
         self.coverage_data.write_file(self.dummy_cov_filepath)
 
