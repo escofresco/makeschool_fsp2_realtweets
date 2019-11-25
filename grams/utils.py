@@ -1,6 +1,10 @@
 from collections import Counter, defaultdict, deque, Iterable
-from functools import wraps
+from contextlib import redirect_stdout
+from functools import reduce, wraps
+from io import StringIO
 from math import ceil, floor, log2
+from os import chmod, walk
+from os.path import exists, join
 from random import choice, randrange
 
 from dit.divergences import jensen_shannon_divergence
@@ -204,6 +208,37 @@ def binsearch(array, target, key=lambda x: x):
     return -1
 
 
+def capture_stdout(func, *args, **kwargs):
+    """Returns the string output of a function.
+
+    pretty much copied from https://tinyurl.com/wkutfow"""
+    sio = StringIO()
+    with redirect_stdout(sio):
+        func(*args, **kwargs)
+    return sio.getvalue()
+
+
+def recur_chmod(dir, *modes):
+    """Takes a directory and variable number of arguments for mode (a file can
+    have multiple permissionsz) and recursively sets mode
+    (octal, ex: stat.S_IEXEC) for files.
+    """
+    if not exists(dir):
+        raise NotADirectoryError(f"{dir} not found :^() ")
+
+    # bitwise-or list of modes
+    new_permisions = reduce(lambda x, y: x | y, modes)
+
+    chmod(dir, new_permisions)
+    for root, dirs, files in walk(dir):
+        # adapted from https://stackoverflow.com/a/16265554/8011811
+        for curdir in dirs:
+            chmod(join(root, curdir), new_permisions)
+
+        for curfile in files:
+            chown(join(root, curfile), new_permisions)
+
+
 def p(string):
     cols = 20
     print()
@@ -254,3 +289,34 @@ def merge_data_containing_ints(*args):
     if isinstance(args[0], dict):
         return merge_nonsequentials_containing_ints(*args)
     return merge_sequentials_containing_ints(*args)
+
+
+from grams.utils import p
+
+
+def run_iter_code(it, codesep, stdout_symbol):
+    """
+
+    """
+    lines = []
+    code_lines = []
+    last_stdout = None
+    codesep_is_open = False
+    for line in it:
+        p(line)
+        if line == codesep:
+            codesep_is_open ^= 1
+        elif line == stdout_symbol:
+            yield last_stdout  #lines.append(last_stdout)
+        else:
+            if codesep_is_open:
+                p(line)
+                last_stdout = capture_stdout(eval, line)
+            yield line  #lines.append(line)
+    if codesep_is_open:
+        raise ValueError("Input is missing a closing tag.")
+    #return "\n".join(lines)
+
+
+def run_code(it, codesep="|><|", stdout_symbol="|<>|"):
+    return "\n".join(run_iter_code(it, codesep, stdout_symbol))
