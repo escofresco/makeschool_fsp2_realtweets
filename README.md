@@ -2,9 +2,7 @@
 
 A Python library for managing the histograms.
 
-[![Build Status](https://travis-ci.com/escofresco/makeschool_fsp2_realtweets.svg?branch=master)](https://travis-ci.com/escofresco/makeschool_fsp2_realtweets)
-
-[![codecov](https://codecov.io/gh/escofresco/makeschool_fsp2_realtweets/branch/master/graph/badge.svg)](https://codecov.io/gh/escofresco/makeschool_fsp2_realtweets)
+[![Build Status](https://travis-ci.com/escofresco/makeschool_fsp2_realtweets.svg?branch=master)](https://travis-ci.com/escofresco/makeschool_fsp2_realtweets) [![codecov](https://codecov.io/gh/escofresco/makeschool_fsp2_realtweets/branch/master/graph/badge.svg)](https://codecov.io/gh/escofresco/makeschool_fsp2_realtweets)
 
 ## Installation
 
