@@ -53,6 +53,43 @@ class HashTableTest(unittest.TestCase):
         ht.set('X', 10)
         assert ht.length() == 3
 
+        # set existing item; length shouldn't change
+        ht.set('I', 1000000000)
+        assert ht.length() == 3
+
+        try:
+            ht.delete('J')
+        except KeyError:
+            pass
+        # deleting non-existent item shouldn't change length
+        assert ht.length() == 3
+
+        # deleting an existing item should change length
+        ht.delete('I')
+        assert ht.length() == 2
+
+    def test_length_edges(self):
+        ht = HashTable()
+        max_unicode_chars = 0x110000 >> 7
+
+        for char_code in range(max_unicode_chars):
+            # add a lot of characters to a hash table
+            ht.set(chr(char_code), char_code)
+        assert ht.length() == max_unicode_chars
+
+        for char_code in range(max_unicode_chars):
+            # add the same characters to the hashtable
+            ht.set(chr(char_code), char_code)
+        # length shouldn't change
+        assert ht.length() == max_unicode_chars
+
+        for char_code in range(max_unicode_chars):
+            # delete every character
+            ht.delete(chr(char_code))
+        # our list should be empty
+        assert ht.length() == 0
+
+
     def test_contains(self):
         ht = HashTable()
         ht.set('I', 1)
