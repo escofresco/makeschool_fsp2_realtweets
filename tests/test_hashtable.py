@@ -139,6 +139,16 @@ class HashTableTest(unittest.TestCase):
         with self.assertRaises(KeyError):
             ht.delete('A')  # Key does not exist
 
+    def test_iterability(self):
+        ht = HashTable()
+
+        for char_code in range(2**10):
+            ht.set(chr(char_code), char_code)
+
+        expected = tuple((chr(char_code), char_code) for char_code in range(2**10))
+        actual = tuple((k,v) for k,v in ht)
+        self.assertCountEqual(expected, actual)
+
 
 if __name__ == '__main__':
     unittest.main()
