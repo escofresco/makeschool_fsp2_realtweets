@@ -21,6 +21,9 @@ class HashTable(object):
         """Return a string representation of this hash table."""
         return 'HashTable({!r})'.format(self.items())
 
+    def __iter__(self):
+        yield from self.items()
+
     def _bucket_index(self, key):
         """Return the bucket index where the given key would be stored."""
         # Calculate the given key's hash code and transform into bucket index
@@ -41,8 +44,6 @@ class HashTable(object):
         """Return a list of all values in this hash table.
         time:  Θ(n) for the best and worst case; there's never a condition
                when this function doesn't go through every item."""
-        # TODO: Loop through all buckets
-        # TODO: Collect all values in each bucket
         return [value for ll in self.buckets for _, value in ll.items()]
 
     def items(self):
@@ -67,8 +68,6 @@ class HashTable(object):
                 through.
                 Θ(1) in the best case; the bucket's list is either empty or
                 the key matches the first node."""
-        # TODO: Find bucket where given key belongs
-        # TODO: Check if key-value entry exists in bucket
         try:
             self.get(key)
         except:
