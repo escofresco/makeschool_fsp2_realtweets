@@ -6,9 +6,162 @@ import unittest
 
 import numpy as np
 
+from grams.online import Avg
 from grams.stats import Distro
 from grams.utils import *
 from tests.data import small_data
+
+
+class LogMethodCallsTestSuite(unittest.TestCase):
+    def test_init(self):
+        C = LogMethodCallsTestSuite.new_dummy_metaclass_subclass()
+        c = C()
+
+        # attributes should be empty
+        self.assertEqual(list(c._logs_), [])
+        self.assertEqual(c._times_, defaultdict(Avg))
+
+        # after c's methods are called, the attributes of other objects
+        # shouldn't be affected
+        c.cmethod()
+        c.imethod()
+        d = C()
+        self.assertEqual(list(d._logs_), [])
+        self.assertEqual(d._times_, defaultdict(Avg))
+
+        # declare and instantiate class that uses __slots__
+        sclass = LogMethodCalls("SlotsClass", (), {"__slots__":()})()
+
+        # check that LogMethodCalls add it's builtin instance variables
+        self.assertCountEqual(sclass.__slots__, ("_logs_", "_times_"))
+
+        # check that LogMethodCalls gracefully handles duplicate instance
+        # variables by omitting them from subclass __slots__
+        sclass = LogMethodCalls("SlotsClass", (), {"__slots__":("_logs_", "_times_")})()
+        self.assertCountEqual(sclass.__slots__, ("_logs_", "_times_"))
+
+    def test_metaclass_logs(self):
+        logs_size = 32
+
+        cls_obj = LogMethodCallsTestSuite.new_dummy_metaclass_subclass(
+            name="Class", logs_size=logs_size)()
+        total_calls = 0
+
+        for name in reversed(dir(cls_obj)):
+            # go through all the attributes of the instance of Class in reverse
+            # order to put magic methods last. stop when we reach a method
+            # surrounded by __ since we'll assume none of the methods we created
+            # are remaining.
+            if name.strip("__") != name:
+                # attr is a builtin
+                break
+            try:
+                # assuming we can use attribute for name as a function, call
+                # a random, consecutive number of times. since LogMethodCalls
+                # merges consecutive method calls with a count, check that
+                # count equals n_calls
+                n_calls = randrange(1, 100)
+                attr = getattr(cls_obj, name)
+
+                for _ in range(n_calls):
+                    attr()
+                total_calls += n_calls
+                with self.subTest(attr=name,
+                                  number_of_calls=n_calls,
+                                  logs=[repr(x) for x in cls_obj._logs_]):
+                    # the last method to be called should have been attr
+                    self.assertEqual(cls_obj._logs_[-1].name, name)
+                    # length of Class.method_logs should only increase by 1
+                    self.assertEqual(cls_obj._logs_[-1].calls, n_calls)
+            except TypeError:
+                pass
+
+        # the total consecutive_calls should be equal to total_calls
+        self.assertEqual(sum(log.calls for log in cls_obj._logs_), total_calls)
+
+        # there are only two methods
+        self.assertEqual(len(cls_obj._logs_), 2)
+
+        for _ in range(50):
+            # don't call each method consecutively to guarantee that _logs_
+            # isn't merging them
+            cls_obj.imethod()
+            cls_obj.cmethod()
+
+        # since more than logs_size items were added, the len of logs should
+        # equal max_size
+        self.assertEqual(len(cls_obj._logs_), logs_size)
+
+    def test_metaclass_subclass_has_arg_in_constructor(self):
+        class C(metaclass=LogMethodCalls):
+            def __init__(self, x):
+                self.x = x
+
+        c = C(3)
+        self.assertEqual(c.x, 3)  # check that args was passed to constructor
+
+        # __init__ should be the only method
+        self.assertEqual(len(c._logs_), 1)
+        self.assertEqual(c._logs_[0].name, "__init__")
+        self.assertEqual(c._logs_[0].calls, 1)
+
+    def test_metaclass_logs_edges(self):
+        num_calls = 10
+
+        # subclass and instantiate LogMethodCalls with some test methods of default logs_size
+        c = LogMethodCallsTestSuite.new_dummy_metaclass_subclass()()
+
+        for _ in range(num_calls):
+            # call methods non-consecutively to guarantee they aren't merged
+            c.imethod()
+            c.cmethod()
+
+        # check that only the last two method calls are saved
+        self.assertEqual(len(c._logs_), 2)
+
+        c = LogMethodCallsTestSuite.new_dummy_metaclass_subclass(logs_size=1)()
+        c.imethod()
+        c.cmethod()
+
+        # check that only the most recent method call is kept
+        self.assertEqual(len(c._logs_), 1)
+
+        # check that the most recent method call tracked is cmethod
+        self.assertEqual(c._logs_[0].name, "cmethod")
+        self.assertEqual(c._logs_[0].calls, 1)
+
+        # check that consecutive method calls are merge by the number of calls
+
+        for _ in range(num_calls):
+            c.imethod()
+        self.assertEqual(c._logs_[0].name, "imethod")
+        self.assertEqual(c._logs_[0].calls, num_calls)
+
+        # subclass and instantiate LogMethodCalls with test methods. not method
+        # calls should be tracked.
+        c = LogMethodCallsTestSuite.new_dummy_metaclass_subclass(logs_size=0)()
+
+        c.imethod()
+        c.cmethod()
+        self.assertEqual(len(c._logs_), 0)
+
+    def test_times(self):
+        pass
+
+    @staticmethod
+    def new_dummy_metaclass_subclass(name="C", logs_size=2):
+        @classmethod
+        def cmethod(cls):
+            pass
+
+        def imethod(self):
+            pass
+
+        return LogMethodCalls("C", (), {
+            "cmethod": cmethod,
+            "imethod": imethod
+        },
+                              logs_size=logs_size)
 
 
 class UtilsTestSuite(unittest.TestCase):
@@ -171,136 +324,6 @@ class UtilsTestSuite(unittest.TestCase):
             #     # compare average results from repeat experiments to expected
             #     self.assertAlmostEqual(np.mean(actual_variance_list),
             #                            expected_variance, -1)
-
-    def test_metaclass(self):
-        logs_size = 32
-
-        # make a dummy class for testing LogMethodCalls
-        class Class(metaclass=LogMethodCalls, logs_size=logs_size):
-            @classmethod
-            def cmethod(cls):
-                pass
-
-            def imethod(self):
-                pass
-
-        cls_obj = Class()
-        total_calls = 0
-
-        for name in reversed(dir(cls_obj)):
-            # go through all the attributes of the instance of Class in reverse
-            # order to put magic methods last. stop when we reach a method
-            # surrounded by __ since we'll assume none of the methods we created
-            # are remaining.
-            if name.strip("__") != name:
-                # attr is a builtin
-                break
-            try:
-                # assuming we can use attribute for name as a function, call
-                # a random, consecutive number of times. since LogMethodCalls
-                # merges consecutive method calls with a count, check that
-                # count equals n_calls
-                n_calls = randrange(1, 100)
-                attr = getattr(cls_obj, name)
-
-                for _ in range(n_calls):
-                    attr()
-                total_calls += n_calls
-                with self.subTest(attr=name,
-                                  number_of_calls=n_calls,
-                                  logs=[repr(x) for x in cls_obj._logs_]):
-                    # the last method to be called should have been attr
-                    self.assertEqual(cls_obj._logs_[-1].name, name)
-                    # length of Class.method_logs should only increase by 1
-                    self.assertEqual(cls_obj._logs_[-1].calls, n_calls)
-            except TypeError:
-                pass
-
-        # the total consecutive_calls should be equal to total_calls
-        self.assertEqual(sum(log.calls for log in cls_obj._logs_), total_calls)
-
-        # there are only two methods
-        self.assertEqual(len(cls_obj._logs_), 2)
-
-        for _ in range(50):
-            # don't call each method consecutively to guarantee that _logs_
-            # isn't merging them
-            cls_obj.imethod()
-            cls_obj.cmethod()
-
-        # since more than logs_size items were added, the len of logs should
-        # equal max_size
-        self.assertEqual(len(cls_obj._logs_), logs_size)
-
-    def test_metaclass_subclass_has_arg_in_constructor(self):
-        class C(metaclass=LogMethodCalls):
-            def __init__(self, x):
-                self.x = x
-
-        c = C(3)
-        self.assertEqual(c.x, 3)  # check that args was passed to constructor
-
-        # __init__ should be the only method
-        self.assertEqual(len(c._logs_), 1)
-        self.assertEqual(c._logs_[0].name, "__init__")
-        self.assertEqual(c._logs_[0].calls, 1)
-
-    def test_metaclass_edges(self):
-        num_calls = 10
-
-        @classmethod
-        def cmethod(cls):
-            pass
-
-        def imethod(self):
-            pass
-
-        # subclass and instantiate LogMethodCalls with some test methods of default logs_size
-        c = LogMethodCalls("C", (), {"cmethod": cmethod, "imethod": imethod})()
-
-        for _ in range(num_calls):
-            # call methods non-consecutively to guarantee they aren't merged
-            c.imethod()
-            c.cmethod()
-
-        # check that only the last two method calls are saved
-        self.assertEqual(len(c._logs_), 2)
-
-        # subclass and instantiate LogMethodCalls with test methods. only the most recent
-        # method call should be tracked
-        c = LogMethodCalls("C", (), {
-            "cmethod": cmethod,
-            "imethod": imethod
-        },
-                           logs_size=1)()
-        c.imethod()
-        c.cmethod()
-
-        # check that only the most recent method call is kept
-        self.assertEqual(len(c._logs_), 1)
-
-        # check that the most recent method call tracked is cmethod
-        self.assertEqual(c._logs_[0].name, "cmethod")
-        self.assertEqual(c._logs_[0].calls, 1)
-
-        # check that consecutive method calls are merge by the number of calls
-
-        for _ in range(num_calls):
-            c.imethod()
-        self.assertEqual(c._logs_[0].name, "imethod")
-        self.assertEqual(c._logs_[0].calls, num_calls)
-
-        # subclass and instantiate LogMethodCalls with test methods. not method
-        # calls should be tracked.
-        c = LogMethodCalls("C", (), {
-            "cmethod": cmethod,
-            "imethod": imethod
-        },
-                           logs_size=0)()
-
-        c.imethod()
-        c.cmethod()
-        self.assertEqual(len(c._logs_), 0)
 
     def test_merge_dictionaries(self):
         expected = {"apple": 3, "banana": 0, "orange": 200}
