@@ -89,7 +89,6 @@ class HashTableTest(unittest.TestCase):
         # our list should be empty
         assert ht.length() == 0
 
-
     def test_contains(self):
         ht = HashTable()
         ht.set('I', 1)
@@ -145,8 +144,9 @@ class HashTableTest(unittest.TestCase):
         for char_code in range(2**10):
             ht.set(chr(char_code), char_code)
 
-        expected = tuple((chr(char_code), char_code) for char_code in range(2**10))
-        actual = tuple((k,v) for k,v in ht)
+        expected = tuple(
+            (chr(char_code), char_code) for char_code in range(2**10))
+        actual = tuple((k, v) for k, v in ht)
         self.assertCountEqual(expected, actual)
 
 

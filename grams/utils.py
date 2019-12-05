@@ -6,19 +6,22 @@ from math import ceil, floor, log2
 from os import chmod, walk
 from os.path import exists, join
 from random import choice, randrange
+from time import time
 
 from dit.divergences import jensen_shannon_divergence
 from dit import Distribution
 
+from .online import Avg
+
 
 class LogMethodCalls(type):
     """Metaclass creates instance variable called _logs_:deque, which holds
-    most recent method calls of logs_size.
+    most recent method calls of logs_size. _times_:defaultdict(online.Avg) holds
+    the average times that methods take to execute.
 
     Follow Principle of Least Astonishment (POLA) by maintaining expected
-    subclass behavior. Add _logs_ feature in a way that doesn't interfere
-    with anticipated usability. In other words, users can interact with
-    subclass without knowing how this metaclass works.
+    subclass behavior. Add _logs_ and _times_ features in a way that doesn't interfere
+    with anticipated usability.
 
     adapted from: shorturl.at/ikW56
     """
@@ -42,6 +45,13 @@ class LogMethodCalls(type):
                 attrs[name] = LogMethodCalls.logdec(attr, logs_size)
             elif isinstance(attr, classmethod):
                 attrs[name] = LogMethodCalls.logdec(attr.__func__, logs_size)
+
+        if "__slots__" in attrs:
+            # when the subclass is using slots, add in our internal
+            # instance vars; cast to <set> to remove duplicates, then cast back
+            # to tuple
+            attrs["__slots__"] = tuple(
+                set((*attrs["__slots__"], "_logs_", "_times_")))
         obj = type.__new__(cls, name, bases, attrs)
         obj.__new__ = LogMethodCalls.makenew(obj)
         return obj
@@ -57,7 +67,11 @@ class LogMethodCalls(type):
                 self._logs_[-1].addcall()
             if len(self._logs_) > logs_size:
                 self._logs_.popleft()
-            return method(self, *a, **ka)
+            time_0 = time()
+            res = method(self, *a, **ka)
+            duration = time() - time_0
+            self._times_[method_name].add(duration)
+            return res
 
         return wrapper
 
@@ -66,6 +80,7 @@ class LogMethodCalls(type):
         def __new__(cls, *a, **ka):
             new_obj = super(obj, cls).__new__(cls)
             new_obj._logs_ = deque()
+            new_obj._times_ = defaultdict(Avg)
             return new_obj
 
         return __new__

@@ -30,14 +30,15 @@ class LogMethodCallsTestSuite(unittest.TestCase):
         self.assertEqual(d._times_, defaultdict(Avg))
 
         # declare and instantiate class that uses __slots__
-        sclass = LogMethodCalls("SlotsClass", (), {"__slots__":()})()
+        sclass = LogMethodCalls("SlotsClass", (), {"__slots__": ()})()
 
         # check that LogMethodCalls add it's builtin instance variables
         self.assertCountEqual(sclass.__slots__, ("_logs_", "_times_"))
 
         # check that LogMethodCalls gracefully handles duplicate instance
         # variables by omitting them from subclass __slots__
-        sclass = LogMethodCalls("SlotsClass", (), {"__slots__":("_logs_", "_times_")})()
+        sclass = LogMethodCalls("SlotsClass", (),
+                                {"__slots__": ("_logs_", "_times_")})()
         self.assertCountEqual(sclass.__slots__, ("_logs_", "_times_"))
 
     def test_metaclass_logs(self):
