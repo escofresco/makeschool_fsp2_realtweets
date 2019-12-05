@@ -4,13 +4,14 @@ from .linkedlist import LinkedList
 
 
 class HashTable(object):
-    __slots__ = ("buckets", "table_length")
+    __slots__ = ("buckets", "table_size", "load_factor")
 
     def __init__(self, init_size=8):
         """Initialize this hash table with the given initial size."""
         # Create a new list (used as fixed-size array) of empty linked lists
         self.buckets = [LinkedList() for _ in range(init_size)]
-        self.table_length = 0
+        self.table_size = 0
+        self.load_factor = .9
 
     def __str__(self):
         """Return a formatted string representation of this hash table."""
@@ -96,13 +97,13 @@ class HashTable(object):
         bucket_idx = self._bucket_index(key)
 
         # subtract this linked list's length from our table
-        self.table_length -= self.buckets[bucket_idx].length()
+        self.table_size -= self.buckets[bucket_idx].length()
 
         self.buckets[bucket_idx].replace(lambda item: item[0] == key,
                                          (key, value))
 
         # add back this linked list's length (the differential being 1 or 0)
-        self.table_length += self.buckets[bucket_idx].length()
+        self.table_size += self.buckets[bucket_idx].length()
 
     def delete(self, key):
         """Delete the given key from this hash table, or raise KeyError.
@@ -114,9 +115,14 @@ class HashTable(object):
 
         try:
             self.buckets[bucket_idx].replace(lambda item: item[0] == key)
-            self.table_length -= 1
+            self.table_size -= 1
         except KeyError as e:
             raise e
+
+    @property
+    def load(self):
+        """Give the current load of the table"""
+        return self.table_size / len(self.buckets)
 
 
 def test_hash_table():
