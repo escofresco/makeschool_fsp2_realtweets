@@ -13,7 +13,7 @@ with open("README.md", "r") as fh:
 
 class sdist_hg(sdist):
     """Subclass sdist as a convenient way to do some development steps.
-
+    run `python setup.py sdist --prepvc`
     a slight copy of sdist docs example: https://tinyurl.com/rw853kn
     """
 
