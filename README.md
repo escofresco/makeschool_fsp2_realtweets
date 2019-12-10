@@ -70,7 +70,6 @@ cov.visualize()
 avg_code_cov = int(cov.mean)
 frequency_standard_deviation = int(hist.std)
 frequency_variance = int(hist.var)
-
 ```
 
 ## Contributing
