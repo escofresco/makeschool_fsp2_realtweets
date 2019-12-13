@@ -1,4 +1,4 @@
-from collections import Counter, defaultdict, deque
+from collections import Counter, defaultdict, deque, namedtuple
 from functools import reduce
 import os
 
@@ -20,18 +20,6 @@ class Markov:
         # use the corpus and a word order
         self.model = self._make_model(corpus)
 
-    # def _make_model(self, corpus):
-    #     res = defaultdict(Counter)
-    #     for sentence in Markov.sentences(corpus):
-    #         # go through each sentence
-    #         last = None
-    #         for token,pos in Markov.padded_sentence(sentence):
-    #             # go through each (<token>, <part of speech>), updating res
-    #             # with tokens following last, grouped by part of speech
-    #             if last:
-    #                 res[last[0]][last[1]][token][pos] += 1
-    #             last = (token, pos)
-    #     return res
     def _make_model(self, corpus):
         """A one-time generation step which builds up the model with rank equal
         to 2*self.order + 1
@@ -134,3 +122,44 @@ class Markov:
             subdict = subdict[keys[i]]
         subdict[keys[-1]] = val
         return dictionary
+
+    @staticmethod
+    def flatten_nested_dicts(dict_containing_nested_dicts):
+        """Using depth first search, take a dictionary of nested dictionaries,
+        flatten into a tuple of a tuple of paths and value at the end of that
+        path.
+        ex:
+            nested_dicts = {
+                "A": {
+                    "man": {
+                        ".": 1,
+                    },
+                    "plan": {
+                        ".": 1,
+                    },
+            }
+            return (
+                (("A", "man", "."), 1),
+                (("A", "plan", "."), 1),
+            )
+        """
+        Item = namedtuple("Item", "path endpoint")
+        stack = [
+            Item((k, ), v) for k, v in dict_containing_nested_dicts.items()
+        ]
+
+        while len(stack):
+            item = stack.pop()
+            if isinstance(item.endpoint, dict):
+                # we aren't done yet, item.endpoint needs to be flattened
+                stack.extend([
+                    Item(item.path + (k, ), v)
+                    for k, v in item.endpoint.items()
+                ])
+            else:
+                # item.endpoint is a non-dictionary value, so we've found
+                # the endpoint of a path
+                yield item.path, item.endpoint
+
+    def generate(self, n_sentences):
+        pass
