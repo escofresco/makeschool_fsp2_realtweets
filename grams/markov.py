@@ -4,7 +4,7 @@ import os
 
 from nltk import pos_tag, sent_tokenize, word_tokenize
 from nltk.tokenize.treebank import TreebankWordDetokenizer
-from .grams import Gram
+from .grams import Gram, Histogram
 
 
 class Markov:
@@ -19,16 +19,27 @@ class Markov:
         self.order = order
 
         # use the corpus and a word order
-        self.model = self._make_model(self._make_sequences(corpus))
+        self.model = self._make_model(
+            self._make_token_tuples(self._make_sequences(corpus)))
 
-    def _make_model(self, sequences):
+    def _make_model(self, token_tuples):
+        res = {}
+        for token, token_tuple in token_tuples:
+            res[token] = Histogram(word_to_freq=tuple(
+                (Markov.detokenize(token_pos), count) for token_pos, count in token_tuple
+            ))
+        return res
+
+    def _make_token_tuples(self, sequences):
         """Take a multidimensional dictionary and convert the values (assumed to
         be dictionaries) into (path, endpoint) tuples."""
 
-        return {
-            token: tuple(self.flatten_nested_dicts(path))
-            for token, path in sequences.items()
-        }
+        # return {
+        #     token: tuple(self.flatten_nested_dicts(path))
+        #     for token, path in sequences.items()
+        # }
+        for token, path in sequences.items():
+            yield token, tuple(self.flatten_nested_dicts(path))
 
     def _make_sequences(self, corpus):
         """A one-time generation step which builds up the model with rank equal
@@ -178,5 +189,15 @@ class Markov:
         """
         return TreebankWordDetokenizer().detokenize(token_pos[1::2])
 
-    def generate(self, n_sentences):
-        pass
+    def generate_sentence(self, start_token=None):
+        if start_token is None:
+            start_token = Markov.START_TOKEN
+        sentence = []
+        next_token = self.model[start_token].sample()
+        while next_token != Markov.STOP_TOKEN:
+            sentence.append(next_token)
+            next_token = self.model[next_token].sample()
+        return TreebankWordDetokenizer().detokenize(sentence)
+
+    def generate(self, n_sentences=1, start_token=None):
+        return ''.join(self.generate_sentence(start_token=start_token) for _ in range(n_sentences))
