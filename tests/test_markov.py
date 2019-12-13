@@ -18,7 +18,7 @@ class MarkovTestSuite(unittest.TestCase):
         corpus = ""
         markovmodel = Markov(corpus)
         expected = {}
-        self.assertEqual(expected, markovmodel.model)
+        self.assertEqual(expected, markovmodel._make_sequences(corpus))
 
     def test_firstorder_word_map_is_correctly_generated(self):
         recursive_dict = lambda: defaultdict(recursive_dict)
@@ -39,7 +39,8 @@ class MarkovTestSuite(unittest.TestCase):
         expected[MarkovTestSuite.STOP_TOKEN][MarkovTestSuite.STOP_TOKEN][
             MarkovTestSuite.START_TOKEN][MarkovTestSuite.START_TOKEN] = 2
 
-        self.assertEqual(expected, markovmodel.model)
+        self.assertEqual(
+            expected, markovmodel._make_sequences(MarkovTestSuite.TINY_CORPUS))
 
     def test_secondorder_word_map_is_correctly_generated(self):
         recursive_dict = lambda: defaultdict(recursive_dict)
@@ -101,7 +102,8 @@ class MarkovTestSuite(unittest.TestCase):
         expected["canal"]["NN"]["."]["."][MarkovTestSuite.STOP_TOKEN][
             MarkovTestSuite.STOP_TOKEN] = 1
 
-        self.assertEqual(expected, markovmodel.model)
+        self.assertEqual(
+            expected, markovmodel._make_sequences(MarkovTestSuite.TINY_CORPUS))
 
     def test_higherorder_word_map_is_correctly_generated(self):
 
@@ -190,10 +192,12 @@ class MarkovTestSuite(unittest.TestCase):
                 "my": {
                     "canal": {
                         ".": 1,
-                    }, "plan": {
+                    },
+                    "plan": {
                         ".": 1,
                     }
-                }, "your": {
+                },
+                "your": {
                     "man": {
                         ".": 1,
                     }
