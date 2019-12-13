@@ -26,8 +26,8 @@ class Markov:
         res = {}
         for token, token_tuple in token_tuples:
             res[token] = Histogram(word_to_freq=tuple(
-                (Markov.detokenize(token_pos), count) for token_pos, count in token_tuple
-            ))
+                (Markov.detokenize(token_pos), count)
+                for token_pos, count in token_tuple))
         return res
 
     def _make_token_tuples(self, sequences):
@@ -200,4 +200,6 @@ class Markov:
         return TreebankWordDetokenizer().detokenize(sentence)
 
     def generate(self, n_sentences=1, start_token=None):
-        return ''.join(self.generate_sentence(start_token=start_token) for _ in range(n_sentences))
+        return ''.join(
+            self.generate_sentence(start_token=start_token)
+            for _ in range(n_sentences))
