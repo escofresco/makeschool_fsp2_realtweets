@@ -14,13 +14,13 @@ class MarkovTestSuite(unittest.TestCase):
         self.assertEqual(MarkovTestSuite.START_TOKEN, Markov.START_TOKEN)
         self.assertEqual(MarkovTestSuite.STOP_TOKEN, Markov.STOP_TOKEN)
 
-    def test_word_map_is_correctly_generated_edges(self):
+    def test_sequences_edges(self):
         corpus = ""
         markovmodel = Markov(corpus)
         expected = {}
         self.assertEqual(expected, markovmodel._make_sequences(corpus))
 
-    def test_firstorder_word_map_is_correctly_generated(self):
+    def test_firstorder_sequence(self):
         recursive_dict = lambda: defaultdict(recursive_dict)
         markovmodel = Markov(MarkovTestSuite.TINY_CORPUS)
 
@@ -42,7 +42,7 @@ class MarkovTestSuite(unittest.TestCase):
         self.assertEqual(
             expected, markovmodel._make_sequences(MarkovTestSuite.TINY_CORPUS))
 
-    def test_secondorder_word_map_is_correctly_generated(self):
+    def test_secondorder_sequences(self):
         recursive_dict = lambda: defaultdict(recursive_dict)
         markovmodel = Markov(MarkovTestSuite.TINY_CORPUS, order=2)
 
@@ -105,7 +105,7 @@ class MarkovTestSuite(unittest.TestCase):
         self.assertEqual(
             expected, markovmodel._make_sequences(MarkovTestSuite.TINY_CORPUS))
 
-    def test_higherorder_word_map_is_correctly_generated(self):
+    def test_higherorder_sequences(self):
 
         # from pprint import pprint
         # print("~"*20)
@@ -113,6 +113,43 @@ class MarkovTestSuite(unittest.TestCase):
         # print("~"*20)
         # pprint(markovmodel.model)
         pass
+
+    def test_model_edges(self):
+        corpus = ""
+        markovmodel = Markov(corpus)
+        expected = {}
+        self.assertEqual(expected, markovmodel.model)
+
+    def test_firstorder_model(self):
+        markovmodel = Markov(MarkovTestSuite.TINY_CORPUS)
+        expected = {
+            MarkovTestSuite.START_TOKEN: (
+                ((MarkovTestSuite.START_TOKEN, "A", "DT"), 3),
+            ),
+            "A": (
+                # dfs causes this to occur in reverse order
+                (("DT", "canal", "NN"), 1),
+                (("DT", "plan", "NN"), 1),
+                (("DT", "man", "NN"), 1),
+            ),
+            "man": (
+                (("NN", ".", "."), 1),
+            ),
+            ".": (
+                ((".", MarkovTestSuite.STOP_TOKEN, MarkovTestSuite.STOP_TOKEN), 3),
+            ),
+            MarkovTestSuite.STOP_TOKEN: (
+                ((MarkovTestSuite.STOP_TOKEN, MarkovTestSuite.START_TOKEN, MarkovTestSuite.START_TOKEN), 2),
+            ),
+            "plan": (
+                (("NN", ".", "."), 1),
+            ),
+            "canal": (
+                (("NN", ".", "."), 1),
+            ),
+        }
+
+        self.assertEqual(expected, markovmodel.model)
 
     def test_sentences(self):
         expected = ((("A", "DT"), ("man", "NN"),
