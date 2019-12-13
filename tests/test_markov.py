@@ -118,7 +118,12 @@ class MarkovTestSuite(unittest.TestCase):
         corpus = ""
         markovmodel = Markov(corpus)
         expected = {}
-        self.assertEqual(expected, markovmodel.model)
+        self.assertEqual(
+            expected, {
+                t[0]: t[1]
+                for t in markovmodel._make_token_tuples(
+                    markovmodel._make_sequences(corpus))
+            })
 
     def test_firstorder_model(self):
         markovmodel = Markov(MarkovTestSuite.TINY_CORPUS)
@@ -141,7 +146,12 @@ class MarkovTestSuite(unittest.TestCase):
             "canal": ((("NN", ".", "."), 1), ),
         }
 
-        self.assertEqual(expected, markovmodel.model)
+        self.assertEqual(
+            expected, {
+                t[0]: t[1]
+                for t in markovmodel._make_token_tuples(
+                    markovmodel._make_sequences(MarkovTestSuite.TINY_CORPUS))
+            })
 
     def test_sentences(self):
         expected = ((("A", "DT"), ("man", "NN"),
