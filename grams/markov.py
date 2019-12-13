@@ -3,6 +3,7 @@ from functools import reduce
 import os
 
 from nltk import pos_tag, sent_tokenize, word_tokenize
+from nltk.tokenize.treebank import TreebankWordDetokenizer
 from .grams import Gram
 
 
@@ -18,9 +19,18 @@ class Markov:
         self.order = order
 
         # use the corpus and a word order
-        self.model = self._make_model(corpus)
+        self.model = self._make_model(self._make_sequences(corpus))
 
-    def _make_model(self, corpus):
+    def _make_model(self, sequences):
+        """Take a multidimensional dictionary and convert the values (assumed to
+        be dictionaries) into (path, endpoint) tuples."""
+
+        return {
+            token: tuple(self.flatten_nested_dicts(path))
+            for token, path in sequences.items()
+        }
+
+    def _make_sequences(self, corpus):
         """A one-time generation step which builds up the model with rank equal
         to 2*self.order + 1
         {<token>: {
@@ -160,6 +170,13 @@ class Markov:
                 # item.endpoint is a non-dictionary value, so we've found
                 # the endpoint of a path
                 yield item.path, item.endpoint
+
+    @staticmethod
+    def detokenize(token_pos):
+        """Convert a tuple of tokens and parts of speech into a single string.
+        ex: ("<|~~START~~|>", "A", "DT", "man", "NN", ".", ".") -> "A man."
+        """
+        return TreebankWordDetokenizer().detokenize(token_pos[1::2])
 
     def generate(self, n_sentences):
         pass

@@ -123,30 +123,22 @@ class MarkovTestSuite(unittest.TestCase):
     def test_firstorder_model(self):
         markovmodel = Markov(MarkovTestSuite.TINY_CORPUS)
         expected = {
-            MarkovTestSuite.START_TOKEN: (
-                ((MarkovTestSuite.START_TOKEN, "A", "DT"), 3),
-            ),
+            MarkovTestSuite.START_TOKEN:
+            (((MarkovTestSuite.START_TOKEN, "A", "DT"), 3), ),
             "A": (
                 # dfs causes this to occur in reverse order
                 (("DT", "canal", "NN"), 1),
                 (("DT", "plan", "NN"), 1),
                 (("DT", "man", "NN"), 1),
             ),
-            "man": (
-                (("NN", ".", "."), 1),
-            ),
-            ".": (
-                ((".", MarkovTestSuite.STOP_TOKEN, MarkovTestSuite.STOP_TOKEN), 3),
-            ),
-            MarkovTestSuite.STOP_TOKEN: (
-                ((MarkovTestSuite.STOP_TOKEN, MarkovTestSuite.START_TOKEN, MarkovTestSuite.START_TOKEN), 2),
-            ),
-            "plan": (
-                (("NN", ".", "."), 1),
-            ),
-            "canal": (
-                (("NN", ".", "."), 1),
-            ),
+            "man": ((("NN", ".", "."), 1), ),
+            ".": (((".", MarkovTestSuite.STOP_TOKEN,
+                    MarkovTestSuite.STOP_TOKEN), 3), ),
+            MarkovTestSuite.STOP_TOKEN:
+            (((MarkovTestSuite.STOP_TOKEN, MarkovTestSuite.START_TOKEN,
+               MarkovTestSuite.START_TOKEN), 2), ),
+            "plan": ((("NN", ".", "."), 1), ),
+            "canal": ((("NN", ".", "."), 1), ),
         }
 
         self.assertEqual(expected, markovmodel.model)
@@ -254,6 +246,21 @@ class MarkovTestSuite(unittest.TestCase):
         res = tuple(Markov.flatten_nested_dicts(nested_dicts))
 
         self.assertEqual(expected, res)
+
+    def test_detokenize(self):
+        token_pos = ("DT", "canal", "NN")
+        expected = "canal"
+        self.assertEqual(expected, Markov.detokenize(token_pos))
+
+        token_pos = (MarkovTestSuite.START_TOKEN, "A", "DT", "man", "NN", ".",
+                     ".")
+        expected = "A man."
+        self.assertEqual(expected, Markov.detokenize(token_pos))
+
+    def test_detokenize_edges(self):
+        token_pos = ()
+        expected = ""
+        self.assertEqual(expected, Markov.detokenize(token_pos))
 
     def test_firstorder_generate_sentence(self):
         pass
