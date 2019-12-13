@@ -129,47 +129,90 @@ class MarkovTestSuite(unittest.TestCase):
 
     def test_get_nested_val_from_keys(self):
         expected = 123
-
-        dictionary = {'a': {'b': {'c': {'d': 123}}}}
+        dictionary = {"a": {"b": {"c": {"d": 123}}}}
 
         ## test a value that exists
-        keys = ['a', 'b', 'c', 'd']
+        keys = ["a", "b", "c", "d"]
         self.assertEqual(Markov.get_nested_val_from_keys(dictionary, keys),
                          expected)
 
         ## test a value that doesn't exist
         expected = None
-        keys[0] = 'b'
+        keys[0] = "b"
         self.assertEqual(
             Markov.get_nested_val_from_keys(dictionary, keys, default=None),
             expected)
 
     def test_set_nested_val_from_keys(self):
-
         recursive_dict = lambda: defaultdict(recursive_dict)
         val = 1
 
         ## change a value for keys in an empty dictionary
         expected = recursive_dict()
-        expected['a']['p']['p']['l']['e'] = val
-        keys = ['a', 'p', 'p', 'l', 'e']
+        expected["a"]["p"]["p"]["l"]["e"] = val
+        keys = ["a", "p", "p", "l", "e"]
         self.assertEqual(
             Markov.set_nested_val_from_keys(recursive_dict(), keys, val),
             expected)
 
         ## change a value from an existing value
         dictionary = recursive_dict()
-        dictionary['a']['p']['p']['l']['e'] = 2
+        dictionary["a"]["p"]["p"]["l"]["e"] = 2
         expected = recursive_dict()
-        expected['a']['p']['p']['l']['e'] = val
-        keys = ['a', 'p', 'p', 'l', 'e']
+        expected["a"]["p"]["p"]["l"]["e"] = val
+        keys = ["a", "p", "p", "l", "e"]
 
         # check dictionary contains the correct value
-        self.assertEqual(dictionary['a']['p']['p']['l']['e'], 2)
+        self.assertEqual(dictionary["a"]["p"]["p"]["l"]["e"], 2)
 
         # check for the changed value
         self.assertEqual(
             Markov.set_nested_val_from_keys(dictionary, keys, val), expected)
 
         # check dictionary was edited in-place
-        self.assertEqual(dictionary['a']['p']['p']['l']['e'], val)
+        self.assertEqual(dictionary["a"]["p"]["p"]["l"]["e"], val)
+
+    def test_flatten_nested_dicts(self):
+
+        nested_dicts = {
+            "A": {
+                "man": {
+                    ".": 1,
+                },
+                "plan": {
+                    ".": 1,
+                },
+                "canal": {
+                    ".": 1,
+                },
+            },
+            "It's": {
+                "my": {
+                    "canal": {
+                        ".": 1,
+                    }, "plan": {
+                        ".": 1,
+                    }
+                }, "your": {
+                    "man": {
+                        ".": 1,
+                    }
+                }
+            }
+        }
+
+        # reversed expected order is because of dfs
+        expected = (
+            (("It's", "your", "man", "."), 1),
+            (("It's", "my", "plan", "."), 1),
+            (("It's", "my", "canal", "."), 1),
+            (("A", "canal", "."), 1),
+            (("A", "plan", "."), 1),
+            (("A", "man", "."), 1),
+        )
+        res = tuple(Markov.flatten_nested_dicts(nested_dicts))
+
+        self.assertEqual(expected, res)
+
+    def test_firstorder_generate_sentence(self):
+        pass
