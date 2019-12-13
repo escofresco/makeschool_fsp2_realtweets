@@ -25,7 +25,7 @@ class Gram(Distro):  #, metaclass=LogMethodCalls, logs_size=4):
 
     @staticmethod
     def line_as_words(line):
-        """Given a string of words, yield the next word as a list. of letters"""
+        """Given a string of words, yield the next word as a list of letters"""
         word = []
         for char in line:
             if char == " ":
