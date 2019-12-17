@@ -245,7 +245,7 @@ class UtilsTestSuite(unittest.TestCase):
     def test_generate_samples(self):
         words = ("apple", "banana")
         freqs = (50, 50)
-        expected_distro = FreqDist(word_to_freq=tuple(zip(words, freqs)))
+        expected_distro = FreqDist(tuple(zip(words, freqs)))
 
         def rand_word():
             return choice(words)
