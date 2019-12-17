@@ -17,6 +17,14 @@ class Var:
     data."""
     mean = count = sum = 0
 
+    def __repr__(self):
+        return (
+            f"variance: {self.var()}\nmean: {self.mean}\ncount: {self.count}"
+            f"\nsum: {self.sum}")
+
+    def __eq__(self, other):
+        return self.mean == other.mean and self.var() == other.var()
+
     def add(self, val):
         self.count += 1
         delta = self.mean + Fraction(val - self.mean, self.count)
@@ -57,9 +65,6 @@ class Var:
             return 0
         return self.sum / (self.count - ddof)
 
-    def __repr__(self):
-        return f"mean: {self.mean} count: {self.count} sum: {self.sum}"
-
 
 @dataclass
 class Avg(float):
@@ -78,6 +83,9 @@ class Avg(float):
         else:
             self.avg = (self.total * self.avg - val) / (self.total - 1)
             self.total = max(0, self.total - 1)
+
+    def __eq__(self, other):
+        return self.avg == other.avg
 
     def __float__(self):
         return self.avg
