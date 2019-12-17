@@ -6,6 +6,7 @@ from grams.linkedlist import LinkedList, Node
 
 
 class NodeTest(unittest.TestCase):
+
     def test_init(self):
         data = 'ABC'
         node = Node(data)
@@ -26,6 +27,7 @@ class NodeTest(unittest.TestCase):
 
 
 class LinkedListTest(unittest.TestCase):
+
     def test_init(self):
         ll = LinkedList()
         # Initializer should add instance properties

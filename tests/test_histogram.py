@@ -21,8 +21,8 @@ class HistogramTestSuite(unittest.TestCase):
             5: {"the"},
             6: {"a"}
         }
-        self.total_words = sum(i * len(w)
-                               for i, w in self.freq_to_words.items())
+        self.total_words = sum(
+            i * len(w) for i, w in self.freq_to_words.items())
         self.FreqencyItem = namedtuple("Item", "freq cumulative words")
         self.cumulative_freq_list = list(self.make_cumulative())
 
@@ -112,17 +112,17 @@ class HistogramTestSuite(unittest.TestCase):
                          small_uniform_data.about.types)
 
         # make a tuple of words from distribution
-        words = tuple(word for item in small_data.distribution
-                      for word in item.words)
+        words = tuple(
+            word for item in small_data.distribution for word in item.words)
 
         # make a tuple of probabilities corresponding to words
         probs = tuple(
             Fraction(item.prob, len(item.words))
-            for item in small_data.distribution for _ in item.words)
+            for item in small_data.distribution
+            for _ in item.words)
 
         # generate distribution modeling histogram.rand_word
-        actual_wordfreq = generate_samples(n_samples,
-                                           expected_histogram.sample)
+        actual_wordfreq = generate_samples(n_samples, expected_histogram.sample)
         actual_histogram = Histogram(actual_wordfreq)
 
         self.assertLessEqual(expected_histogram.similarity(actual_histogram),

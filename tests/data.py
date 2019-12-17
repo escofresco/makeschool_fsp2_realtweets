@@ -30,7 +30,7 @@ class WordData:
 
         self.distribution = (tuple(
             sorted(list(self._make_distribution()), key=lambda x: x.freq))
-                             if len(words) else ((), (), (), ((), )))
+                             if len(words) else ((), (), (), ((),)))
 
     def _make_distribution(self):
         Item = namedtuple("Item", "prob freq cumulative_prob words")
@@ -56,7 +56,7 @@ class WordData:
 
 
 no_word_data = WordData(())
-one_word_data = WordData(("word", ))
+one_word_data = WordData(("word",))
 small_data = WordData(
     ("the", "orange", "banana", "peach", "a", "or", "good", "tasty", "banana",
      "or", "the", "or", "tasty", "the", "orange"))
@@ -64,3 +64,13 @@ small_uniform_data = WordData(("the", "orange", "banana", "peach", "a", "or",
                                "good", "tasty", "mango", "misty"))
 
 DISTRO_DISTANCE_THRESHOLD = 0.05
+
+CORPUS = """
+That'll be $26.50, Mrs. Markov.
+Here you go.
+How's Andrey doing?
+Andrey is doing well, thanks.
+"""
+MINI_CORPUS = "A man. A plan. A canal."
+START_TOKEN = "<|~~START~~|>"
+STOP_TOKEN = "<|~~STOP~~|>"

@@ -119,5 +119,4 @@ class ListogramTest(unittest.TestCase):
             "('two', 1))\nmin: 1\nmax: 4\nmax_word_len: 4\nmean: 5/2\nvar: 9/4"
             "\nstd: 1.5\ntokens: 8\ntypes: 5\nwords: (('blue', 'one', 'red', "
             "'two'), ('fish',))\nprobs: (Fraction(1, 2), Fraction(1, 2))\n"
-            "freqs: (1, 4)\ncumulative_probs: (Fraction(1, 2), Fraction(1, 1))"
-        )
+            "freqs: (1, 4)\ncumulative_probs: (Fraction(1, 2), Fraction(1, 1))")

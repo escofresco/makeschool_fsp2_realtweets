@@ -17,12 +17,11 @@ class DictogramTest(unittest.TestCase):
         # Verify histogram as dictionary of entries like {word: count}
         assert len(dictogram) == 5
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # dictogram inherits from stats.Distro which is iterable in an
+        # dictogram inherits from stats.FreqDist which is iterable in an
         # incompatible way with the original assert.
         ## self.assertCountEqual(dictogram, self.fish_dict)  # Ignore item order
         self.assertCountEqual(
-            [word for item in dictogram for word in item.words],
-            self.fish_dict)
+            [word for item in dictogram for word in item.words], self.fish_dict)
         #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Verify histogram as list of entries like [(word, count)]
         listogram = dictogram.items()
@@ -120,5 +119,4 @@ class DictogramTest(unittest.TestCase):
             "1}\nmin: 1\nmax: 4\nmax_word_len: 4\nmean: 5/2\nvar: 9/4"
             "\nstd: 1.5\ntokens: 8\ntypes: 5\nwords: (('one', 'two', 'red', "
             "'blue'), ('fish',))\nprobs: (Fraction(1, 2), Fraction(1, 2))\n"
-            "freqs: (1, 4)\ncumulative_probs: (Fraction(1, 2), Fraction(1, 1))"
-        )
+            "freqs: (1, 4)\ncumulative_probs: (Fraction(1, 2), Fraction(1, 1))")

@@ -8,15 +8,16 @@ from data import one_word_data, small_data
 
 
 class TestSuite(unittest.TestCase):
+
     def test_oneworddata(self):
-        expected_words = ("word", )
+        expected_words = ("word",)
         expected_word_count = 1
         expected_word_to_freq = {"word": 1}
 
-        expected_probs = (Fraction(1, 1), )
-        expected_freqs = (1, )
-        expected_cumulative_probs = (Fraction(1, 1), )
-        expected_d_words = (("word", ), )
+        expected_probs = (Fraction(1, 1),)
+        expected_freqs = (1,)
+        expected_cumulative_probs = (Fraction(1, 1),)
+        expected_d_words = (("word",),)
         (actual_probs, actual_freqs, actual_cumulative_probs,
          actual_words) = zip(*tuple(map(tuple, one_word_data.distribution)))
 
@@ -36,9 +37,9 @@ class TestSuite(unittest.TestCase):
         self.assertEqual(one_word_data.about.std, 0.)
 
     def test_smalldata(self):
-        expected_words = ("the", "orange", "banana", "peach", "a", "or",
-                          "good", "tasty", "banana", "or", "the", "or",
-                          "tasty", "the", "orange")
+        expected_words = ("the", "orange", "banana", "peach", "a", "or", "good",
+                          "tasty", "banana", "or", "the", "or", "tasty", "the",
+                          "orange")
         expected_word_count = 15
         expected_word_to_freq = {
             "the": 3,

@@ -8,20 +8,21 @@ import unittest
 
 from coverage import CoverageData
 
-from grams.grams import Covergram, Gram, Distro
+from grams.grams import Covergram, Gram, FreqDist
 from grams.utils import capture_stdout
 
 
 class GramTestSuite(unittest.TestCase):
+
     def test_gram_correct_parent(self):
-        self.assertEqual(Gram.__bases__, (Distro, ))
+        self.assertEqual(Gram.__bases__, (FreqDist,))
 
     def test_line_as_words_edges(self):
         expected = ()
         line = ""
         self.assertEqual(expected, tuple(Gram.line_as_words(line)))
 
-        expected = (["a"], )
+        expected = (["a"],)
         line = "a"
         self.assertEqual(expected, tuple(Gram.line_as_words(line)))
 
@@ -57,14 +58,14 @@ class GramTestSuite(unittest.TestCase):
         self.assertEqual(expected, tuple(Gram.line_as_words(line)))
 
     def test_similarity(self):
-        first_distro = Distro((("apple", 1), ("day", 10000)))
-        second_distro = Distro((("apple", 1), ("day", 10000)))
+        first_distro = FreqDist((("apple", 1), ("day", 10000)))
+        second_distro = FreqDist((("apple", 1), ("day", 10000)))
         expected = 0.  # distros are identical
         actual = first_distro.similarity(second_distro)
         self.assertEqual(expected, actual)
 
-        first_distro = Distro((("apple", 1), ("day", 100000)))
-        second_distro = Distro((("apple", 100000), ("day", 1)))
+        first_distro = FreqDist((("apple", 1), ("day", 100000)))
+        second_distro = FreqDist((("apple", 100000), ("day", 1)))
         expected = 1  # distros are very distance
         actual = first_distro.similarity(second_distro)
         self.assertAlmostEqual(expected, actual, 3)
@@ -87,7 +88,7 @@ class GramTestSuite(unittest.TestCase):
         ## temporarily capture standard output and compare to an expected string
         # check that dictionaries, tuples, and lists are handled correctly
         dgram = Gram({"apple": 2})
-        tgram = Gram((("apple", 2), ))
+        tgram = Gram((("apple", 2),))
         lgram = Gram([["apple", 2]])
         expected = "\napple: ▇▇ 2.00 \n\n"
         f = StringIO()
@@ -117,7 +118,7 @@ class GramTestSuite(unittest.TestCase):
     def test_not_implemented(self):
 
         # subclass Gram and check that NotImplementedError is enforced
-        c = type("C", (Gram, ), {})([])
+        c = type("C", (Gram,), {})([])
 
         with self.assertRaises(NotImplementedError):
             c.frequency("apple")
@@ -127,6 +128,7 @@ class GramTestSuite(unittest.TestCase):
 
 
 class CovergramTestSuite(unittest.TestCase):
+
     def __init__(self, *a, **ka):
         super().__init__(*a, **ka)
 
@@ -152,7 +154,7 @@ class CovergramTestSuite(unittest.TestCase):
 
         ### coverage needs actual module files, so generate them
         self.coverage_data = CoverageData()
-        self.coverage_data.add_lines(dict(((module_to_line[0]), )))
+        self.coverage_data.add_lines(dict(((module_to_line[0]),)))
         self.make_file(
             module_to_line[0][0], """
                        x = 1
@@ -166,7 +168,7 @@ class CovergramTestSuite(unittest.TestCase):
                        assert z == 3
                        """)
 
-        self.coverage_data.add_lines(dict(((module_to_line[1]), )))
+        self.coverage_data.add_lines(dict(((module_to_line[1]),)))
         self.make_file(
             module_to_line[1][0], """
 
@@ -182,13 +184,13 @@ class CovergramTestSuite(unittest.TestCase):
 
                        """)
 
-        self.coverage_data.add_lines(dict(((module_to_line[2]), )))
+        self.coverage_data.add_lines(dict(((module_to_line[2]),)))
         self.make_file(
             module_to_line[2][0], """
 
                        assert True is True
                        """)
-        self.coverage_data.add_lines(dict(((module_to_line[3]), )))
+        self.coverage_data.add_lines(dict(((module_to_line[3]),)))
         self.make_file(
             module_to_line[3][0], """
                         a = b = c = 3
@@ -200,7 +202,7 @@ class CovergramTestSuite(unittest.TestCase):
                         l.pop()
                         assert l is ll is lll
                        """)
-        self.coverage_data.add_lines(dict(((module_to_line[4]), )))
+        self.coverage_data.add_lines(dict(((module_to_line[4]),)))
         self.make_file(module_to_line[4][0], "")
 
         self.coverage_data.write_file(self.dummy_cov_filepath)

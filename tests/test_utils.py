@@ -7,12 +7,13 @@ import unittest
 import numpy as np
 
 from grams.online import Avg
-from grams.stats import Distro
+from grams.stats import FreqDist
 from grams.utils import *
 from tests.data import small_data
 
 
 class LogMethodCallsTestSuite(unittest.TestCase):
+
     def test_init(self):
         C = LogMethodCallsTestSuite.new_dummy_metaclass_subclass()
         c = C()
@@ -94,7 +95,9 @@ class LogMethodCallsTestSuite(unittest.TestCase):
         self.assertEqual(len(cls_obj._logs_), logs_size)
 
     def test_metaclass_subclass_has_arg_in_constructor(self):
+
         class C(metaclass=LogMethodCalls):
+
             def __init__(self, x):
                 self.x = x
 
@@ -151,6 +154,7 @@ class LogMethodCallsTestSuite(unittest.TestCase):
 
     @staticmethod
     def new_dummy_metaclass_subclass(name="C", logs_size=2):
+
         @classmethod
         def cmethod(cls):
             pass
@@ -166,6 +170,7 @@ class LogMethodCallsTestSuite(unittest.TestCase):
 
 
 class UtilsTestSuite(unittest.TestCase):
+
     def test_invert_dict_norm(self):
         input = {"a": 3, "b": 1, "c": 1, "d": 4, "e": 3}
         inverse = {1: ["b", "c"], 3: ["a", "e"], 4: ["d"]}
@@ -202,8 +207,8 @@ class UtilsTestSuite(unittest.TestCase):
                          list(map_to_binary(["a", "b", "c", "d"])))
 
         # test uneven powers of two
-        self.assertEqual(["00", "01", "10"],
-                         list(map_to_binary(["a", "b", "c"])))
+        self.assertEqual(["00", "01", "10"], list(map_to_binary(["a", "b",
+                                                                 "c"])))
         # test uneven powers of two
         self.assertEqual(["000", "001", "010", "011", "100"],
                          list(map_to_binary(["a", "b", "c", "d", "e"])))
@@ -240,7 +245,7 @@ class UtilsTestSuite(unittest.TestCase):
     def test_generate_samples(self):
         words = ("apple", "banana")
         freqs = (50, 50)
-        expected_distro = Distro(word_to_freq=tuple(zip(words, freqs)))
+        expected_distro = FreqDist(word_to_freq=tuple(zip(words, freqs)))
 
         def rand_word():
             return choice(words)
@@ -248,7 +253,7 @@ class UtilsTestSuite(unittest.TestCase):
         n_samples = 10000
 
         # generate_samples returns Counter of keys generated from rand_word
-        actual_distro = Distro(generate_samples(n_samples, rand_word))
+        actual_distro = FreqDist(generate_samples(n_samples, rand_word))
 
         # the correct number of samples were generated
         self.assertEqual(sum(actual_distro.freqs), n_samples)
@@ -334,8 +339,8 @@ class UtilsTestSuite(unittest.TestCase):
                 merge_nonsequentials_containing_ints({"apple": 3},
                                                      {"banana": 0},
                                                      {"orange": 200})))
-        self.assertEqual(
-            expected, merge_nonsequentials_containing_ints(expected, {}, {}))
+        self.assertEqual(expected,
+                         merge_nonsequentials_containing_ints(expected, {}, {}))
         self.assertEqual(
             expected,
             merge_nonsequentials_containing_ints({"apple": 1}, {
@@ -360,8 +365,7 @@ class UtilsTestSuite(unittest.TestCase):
         self.assertEqual(
             expected,
             merge_sequentials_containing_ints(
-                (("apple", 1), ("apple", 2), ("orange", 50)),
-                (("mango", 4), )))
+                (("apple", 1), ("apple", 2), ("orange", 50)), (("mango", 4),)))
 
     def test_merge_sequential_nonstring_data_edges(self):
 
@@ -374,7 +378,7 @@ class UtilsTestSuite(unittest.TestCase):
         self.assertEqual(
             expected,
             merge_sequentials_containing_ints(
-                (("apple", 3), ), (("orange", 50), ), (("mango", 4), )))
+                (("apple", 3),), (("orange", 50),), (("mango", 4),)))
 
     def test_merge_seq_or_non_seq_data(self):
         # these tests are identical to tests contained in
@@ -385,8 +389,7 @@ class UtilsTestSuite(unittest.TestCase):
             dict(
                 merge_data_containing_ints({"apple": 3}, {"banana": 0},
                                            {"orange": 200})))
-        self.assertEqual(expected,
-                         merge_data_containing_ints(expected, {}, {}))
+        self.assertEqual(expected, merge_data_containing_ints(expected, {}, {}))
         self.assertEqual(
             expected,
             merge_data_containing_ints({"apple": 1}, {
@@ -401,8 +404,7 @@ class UtilsTestSuite(unittest.TestCase):
         self.assertEqual(
             expected,
             merge_data_containing_ints(
-                (("apple", 1), ("apple", 2), ("orange", 50)),
-                (("mango", 4), )))
+                (("apple", 1), ("apple", 2), ("orange", 50)), (("mango", 4),)))
 
     def test_capture_stdout(self):
         expected = "boot moot root"

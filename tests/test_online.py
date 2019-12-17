@@ -13,6 +13,7 @@ def avg(array):
 
 
 class OnlineTestSuite(unittest.TestCase):
+
     def setUp(self):
         self.online_avg = Avg()
         self.normal_large_array = [randrange(i) for i in range(1, 100001)]

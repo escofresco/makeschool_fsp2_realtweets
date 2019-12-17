@@ -8,6 +8,7 @@ if not hasattr(unittest.TestCase, 'assertCountEqual'):
 
 
 class HashTableTest(unittest.TestCase):
+
     def test_init(self):
         ht = HashTable(4)
         assert len(ht.buckets) == 4
