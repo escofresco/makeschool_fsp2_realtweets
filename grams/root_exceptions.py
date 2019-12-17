@@ -30,8 +30,16 @@ the exception being subclassed.::
 """
 
 __all__ = [
-    "Error", "ImproperDataFormatError", "ImproperBinFormatError",
-    "ImproperListFormatError", "ImproperTupleFormatError"
+    "Error",
+    "ImproperDataFormatError",
+    "ImproperBinFormatError",
+    "ImproperListFormatError",
+    "ImproperTupleFormatError",
+    "InvalidDataError",
+    "InvalidTokenError",
+    "InvalidTokenDatatype",
+    "InvalidFrequencyError",
+    "InvalidDataTypeError",
 ]
 
 
