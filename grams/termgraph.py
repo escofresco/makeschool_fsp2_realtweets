@@ -20,6 +20,8 @@ from datetime import datetime, timedelta
 from itertools import zip_longest
 from colorama import init
 
+__all__ = []
+
 init()
 
 # ANSI escape SGR Parameters color codes

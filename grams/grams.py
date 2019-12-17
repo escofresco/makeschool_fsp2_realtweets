@@ -14,13 +14,15 @@ from typing import Iterable, Optional, Tuple, Union
 from coverage import Coverage, CoverageData
 
 from .online import Var
-from .stats import Distro, Sample
+from .stats import FreqDist, Sample
 from .termgraph import showgraph
 from .utils import (binsearch, invert_dict, LogMethodCalls,
                     merge_data_containing_ints, p)
 
+__all__ = ["Histogram", "Listogram", "Dictogram"]
 
-class Gram(Distro):  #, metaclass=LogMethodCalls, logs_size=4):
+
+class Gram(FreqDist):  #, metaclass=LogMethodCalls, logs_size=4):
     __slots__ = ()
 
     @staticmethod
@@ -90,7 +92,7 @@ class Gram(Distro):  #, metaclass=LogMethodCalls, logs_size=4):
             labels, data = zip(*self.word_to_freq)
 
         # since termgraph uses categories, restructure data as 2d
-        data = tuple((elm, ) for elm in data)
+        data = tuple((elm,) for elm in data)
         showgraph(labels=labels, data=data)
 
     def frequency(self, word):
@@ -194,8 +196,8 @@ class Listogram(Gram, metaclass=LogMethodCalls, logs_size=4):
             self.sampler = Sample(self)
 
 
-class Dictogram(Gram, metaclass=LogMethodCalls,
-                logs_size=4):  #Distro, metaclass=LogMethodCalls, logs_size=4):
+class Dictogram(Gram, metaclass=LogMethodCalls, logs_size=4
+               ):  #FreqDist, metaclass=LogMethodCalls, logs_size=4):
     """Dictogram is a histogram implemented as a subclass of the dict type."""
 
     __slots__ = ("temp_word_to_freq", "sampler", "_logs_")
@@ -264,7 +266,7 @@ class Covergram(Gram, metaclass=LogMethodCalls, logs_size=4):
 
     def as_module_to_coverage(self):
         """Give next (<module name>, <percent module code coverage>) in
-        coverage file, a format that can be passed to the Distro constructor"""
+        coverage file, a format that can be passed to the FreqDist constructor"""
         original_stdout = sys.stdout  # store original stdout state
 
         # temporarily suppress standard output since calling

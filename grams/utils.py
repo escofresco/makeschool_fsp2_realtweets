@@ -13,6 +13,8 @@ from dit import Distribution
 
 from .online import Avg
 
+__all__ = []
+
 
 class LogMethodCalls(type):
     """Metaclass creates instance variable called _logs_:deque, which holds
@@ -58,6 +60,7 @@ class LogMethodCalls(type):
 
     @staticmethod
     def logdec(method, logs_size):
+
         @wraps(method)
         def wrapper(self, *a, **ka):
             method_name = method.__name__
@@ -77,6 +80,7 @@ class LogMethodCalls(type):
 
     @staticmethod
     def makenew(obj):
+
         def __new__(cls, *a, **ka):
             new_obj = super(obj, cls).__new__(cls)
             new_obj._logs_ = deque()
@@ -104,10 +108,8 @@ def histogram_similarity(first_distro_words, first_distro_probs,
 
     if len(second_distro_words) != len(second_distro_probs):
         raise error_msg(second_distro_words, second_distro_probs)
-    expected_distribution = Distribution(first_distro_words,
-                                         first_distro_probs)
-    actual_distribution = Distribution(second_distro_words,
-                                       second_distro_probs)
+    expected_distribution = Distribution(first_distro_words, first_distro_probs)
+    actual_distribution = Distribution(second_distro_words, second_distro_probs)
     return jensen_shannon_divergence(
         [expected_distribution, actual_distribution])
 
@@ -306,9 +308,6 @@ def merge_data_containing_ints(*args):
     return merge_sequentials_containing_ints(*args)
 
 
-from grams.utils import p
-
-
 def run_iter_code(it, codesep, stdout_symbol):
     """
 
@@ -318,14 +317,12 @@ def run_iter_code(it, codesep, stdout_symbol):
     last_stdout = None
     codesep_is_open = False
     for line in it:
-        p(line)
         if line == codesep:
             codesep_is_open ^= 1
         elif line == stdout_symbol:
             yield last_stdout  #lines.append(last_stdout)
         else:
             if codesep_is_open:
-                p(line)
                 last_stdout = capture_stdout(eval, line)
             yield line  #lines.append(line)
     if codesep_is_open:

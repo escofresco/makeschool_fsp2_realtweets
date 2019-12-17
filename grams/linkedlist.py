@@ -1,5 +1,7 @@
 #!python
 
+__all__ = []
+
 
 class Node(object):
     __slots__ = ("data", "next")
@@ -15,6 +17,7 @@ class Node(object):
 
 
 class LinkedList(object):
+
     def __init__(self, items=None):
         """Initialize this linked list and append the given items, if any."""
         self.head = None  # First node

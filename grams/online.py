@@ -8,6 +8,8 @@ from typing import Iterable
 
 import numpy as np
 
+__all__ = ["Var", "Avg", "Rand"]
+
 
 @dataclass
 class Var:
