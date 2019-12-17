@@ -13,7 +13,14 @@ from dit import Distribution
 
 from .online import Avg
 
-__all__ = []
+__all__ = [
+    "LogMethodCalls", "sample_size", "histogram_similarity", "is_binary_format",
+    "map_to_binary", "invert_dict", "randints", "rand_word_distro",
+    "generate_samples", "binsearch", "capture_stdout", "recur_chmod", "p",
+    "ismethod", "merge_nonsequentials_containing_ints",
+    "merge_sequentials_containing_ints", "merge_data_containing_ints",
+    "run_iter_code", "run_code"
+]
 
 
 class LogMethodCalls(type):
