@@ -40,6 +40,13 @@ __all__ = [
     "InvalidTokenDatatype",
     "InvalidFrequencyError",
     "InvalidDataTypeError",
+    "InvalidIndexError",
+    "IndexNotFoundError",
+    "KeyError",
+    "KeyNotFoundError",
+    "InvalidKeyError",
+    "DoesNotExistError",
+    "MissingDataError",
 ]
 
 
@@ -89,5 +96,45 @@ class InvalidFrequencyError(InvalidDataError):
 
 
 class InvalidDataTypeError(InvalidDataError):
-    """The datatype of the provided data is invalid"""
+    """The datatype of the provided data is invalid."""
+    pass
+
+
+class IndexError(Error):
+    """Base-class for index errors"""
+    pass
+
+
+class IndexNotFoundError(IndexError):
+    """The value being used to index a sequence is incompatible."""
+    pass
+
+
+class InvalidIndexError(IndexError):
+    """The value being used to index a sequence isn't a valid value."""
+    pass
+
+
+class KeyError(Error):
+    """Base-class to the use of keys with mappable objects."""
+    pass
+
+
+class KeyNotFoundError(Error):
+    """The provided key doesn't exist in a mappable object."""
+    pass
+
+
+class InvalidKeyError(KeyError):
+    """The provided key can't be used to access a mappable object."""
+    pass
+
+
+class DoesNotExistError(Error):
+    """Base-class for all the things that don't exist."""
+    pass
+
+
+class MissingDataError(Error):
+    """There was supposed to be data, but something must've happened."""
     pass
