@@ -256,7 +256,8 @@ class UtilsTestSuite(unittest.TestCase):
         actual_distro = FreqDist(generate_samples(n_samples, rand_word))
 
         # the correct number of samples were generated
-        self.assertEqual(sum(actual_distro.freqs), n_samples)
+        self.assertEqual(sum(freq for _, freq in actual_distro.bins.items()),
+                         n_samples)
 
         # given n_samples is large, it's very likely every word appears at least
         # once
