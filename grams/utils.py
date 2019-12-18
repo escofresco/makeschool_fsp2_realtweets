@@ -218,14 +218,40 @@ def generate_samples(n, func):
     return counts
 
 
-def binsearch(array, target, key=lambda x: x):
+def binsearch(array, target):
+    """Use binary search to find target in array.
+
+    Args:
+        array:  A sequence of data.
+        target:
+                If target is callable, it's expected to accept a comparison
+                function that it uses to check it an element is a match.
+                If target isn't callable, it just represents a value to
+                find.
+    """
+    if not callable(target):
+        ## Since target isn't callable, it is converted to something that is.
+        ## It accepts a comparison function which takes a single argument to
+        ## check against.
+        target_val = target
+
+        def is_match(cmp):
+            res = cmp(target_val)
+            if res is NotImplemented:
+                return False
+            return res
+
+        target = is_match
+
     lo = 0
     hi = len(array) - 1
     while lo <= hi:
         mid = (hi + lo) // 2  # ?do we need to handle overflow in python?
-        if key(array[mid]) == target:
+        #if target(array[mid]):
+        if target(array[mid].__eq__):
             return mid
-        if key(array[mid]) < target:
+        #if key(array[mid]) < target:
+        if target(array[mid].__lt__):
             lo = mid + 1
         else:
             hi = mid - 1
