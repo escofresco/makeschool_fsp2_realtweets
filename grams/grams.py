@@ -23,20 +23,28 @@ __all__ = ["Histogram", "Listogram", "Dictogram"]
 
 
 class Gram(FreqDist):  #, metaclass=LogMethodCalls, logs_size=4):
-    __slots__ = ()
+    """This is a generic histogram which holds a distribution of data, which
+    have been clumped into bins by the parent class, FreqDist. Bins are aligned
+    in two dimensions, data and frequency, where frequency is calculated from
+    data.
 
-    @staticmethod
-    def line_as_words(line):
-        """Given a string of words, yield the next word as a list of letters"""
-        word = []
-        for char in line:
-            if char == " ":
-                yield Histogram.strip_non_alnums(word)
-                word = []
-            else:
-                word.append(char)
-        if len(word):
-            yield Histogram.strip_non_alnums(word)
+    Args:
+        data: This represents the input to a probability distribution function.
+    """
+    __slots__ = ("data_frequency")
+
+    def __init__(self, data_frequency):
+        super().__init__(data_frequency)
+        self.sampler = Sample(self)
+
+    def similarity(self, other):
+        return super().similarity(other)
+
+    def frequency(self, word):
+        raise NotImplementedError()
+
+    def sample(self):
+        return self.sampler.randword()
 
     @staticmethod
     def bin_search(array, prob):
@@ -54,52 +62,6 @@ class Gram(FreqDist):  #, metaclass=LogMethodCalls, logs_size=4):
             else:
                 hi = mid
         return None
-
-    @staticmethod
-    def is_valid_start_char(char):
-        """Checks if given character is valid at the start of a string"""
-        allowed_start_chars = {"$", "£"}
-        return char.isalnum() or char in allowed_start_chars
-
-    @staticmethod
-    def is_valid_end_char(char):
-        """Checks if given character is valid at the end of a string"""
-        allowed_end_chars = {"%"}
-        return char.isalnum() or char in allowed_end_chars
-
-    @staticmethod
-    def strip_non_alnums(string):
-        """Custom strip for removing all non-alphanumeric characters."""
-        start = 0
-        while start < len(string) and not Gram.is_valid_start_char(
-                string[start]):
-            start += 1
-        end = len(string) - 1
-        while end >= 0 and not Gram.is_valid_end_char(string[end]):
-            end -= 1
-        return string[start:end + 1]
-
-    def similarity(self, other):
-        return super().similarity(other)
-
-    def visualize(self):
-        if not len(self.word_to_freq):
-            raise ValueError("There's no data to display.")
-
-        if isinstance(self.word_to_freq, dict):
-            labels, data = zip(*self.word_to_freq.items())
-        else:
-            labels, data = zip(*self.word_to_freq)
-
-        # since termgraph uses categories, restructure data as 2d
-        data = tuple((elm,) for elm in data)
-        showgraph(labels=labels, data=data)
-
-    def frequency(self, word):
-        raise NotImplementedError()
-
-    def sample(self):
-        raise NotImplementedError()
 
 
 class Histogram(Gram, metaclass=LogMethodCalls, logs_size=4):
@@ -198,19 +160,23 @@ class Listogram(Gram, metaclass=LogMethodCalls, logs_size=4):
 
 class Dictogram(Gram, metaclass=LogMethodCalls, logs_size=4
                ):  #FreqDist, metaclass=LogMethodCalls, logs_size=4):
-    """Dictogram is a histogram implemented as a subclass of the dict type."""
+    """This histogram uses dict as it's primary datastructure.
 
-    __slots__ = ("temp_word_to_freq", "sampler", "_logs_")
+    Args:
+
+
+    """
+
+    __slots__ = ("temp_word_to_freq", "word_list", "sampler")
 
     def __init__(self, word_list=None):
-        """Initialize this histogram as a new dict and count given words."""
 
         # Temporarily hold the (word,count) added from add_count, which will
         # be added to a new distribution as part of a new Dictogram
         self.temp_word_to_freq = defaultdict(int)
 
         if word_list is not None:
-            super().__init__(dict(Counter(word_list)))
+            super().__init__(Counter(word_list))
         else:
             super().__init__({})
         self.sampler = Sample(self)
