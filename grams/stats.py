@@ -184,7 +184,6 @@ class Distro:
             labels, data = zip(*self.bins)
         Distro.show_data(labels, data)
 
-
     @staticmethod
     def show_data(labels, data):
         """Display two-dimensional data in the terminal.
@@ -456,7 +455,8 @@ class FreqDist(Distro):
             bin_dtype = (tuple if Distro.is_mapping(type(tokens_freqs)) else
                          type(tokens_freqs[i]))
 
-            self.max_token_str_len = max(self.max_token_str_len, len(str(token)))
+            self.max_token_str_len = max(self.max_token_str_len,
+                                         len(str(token)))
 
             ##
             # Initialization
@@ -466,8 +466,8 @@ class FreqDist(Distro):
                 ## assignment is safe
                 self.type_dtype = type(token)
 
-
-            if (self.max_token_len is self.min_token_len is None and hasattr(token, "__len__")):
+            if (self.max_token_len is self.min_token_len is None and
+                    hasattr(token, "__len__")):
                 self.max_token_len = self.min_token_len = len(token)
 
             ##
@@ -556,7 +556,7 @@ class FreqDist(Distro):
         # one.
         self.highest_rank_types = None
 
-        self.max_token_str_len = float("-inf") # longest str(token)
+        self.max_token_str_len = float("-inf")  # longest str(token)
 
         # type size is None by default since type may be a number or string
         self.max_token_len = None  # largest length of a type
@@ -653,7 +653,8 @@ class FreqDist(Distro):
             The next bin with converted to a string of max_len and frequency
             converted to probability.
         """
-        for outcome, freq in (self.bins.items() if Distro.is_mapping(self.dtype) else self.bins):
+        for outcome, freq in (self.bins.items()
+                              if Distro.is_mapping(self.dtype) else self.bins):
             outcome = str(outcome)
             yield (outcome + " " * (max_len - len(outcome)),
                    Fraction(freq, self.token_count))
@@ -685,7 +686,8 @@ class FreqDist(Distro):
         """
         max_len = max(self.max_token_str_len, other.max_token_str_len)
 
-        return FreqDist.jensen_shannon_distance(self.padded_bins(max_len), other.padded_bins(max_len))
+        return FreqDist.jensen_shannon_distance(self.padded_bins(max_len),
+                                                other.padded_bins(max_len))
 
     @staticmethod
     def jensen_shannon_distance(first_bins, second_bins):
@@ -707,8 +709,8 @@ class FreqDist(Distro):
             https://en.wikipedia.org/wiki/Jensen%E2%80%93Shannon_divergence
         """
         return jensen_shannon_divergence(
-            [Distribution(dict(first_bins)), Distribution(dict(second_bins))])
-
+            [Distribution(dict(first_bins)),
+             Distribution(dict(second_bins))])
 
     @staticmethod
     def cast(obj, target, default=None):
@@ -764,7 +766,6 @@ class Sample:
         self.distribution = distribution
         self.n = len(distribution)
 
-
         self.index_key_map = ([k for k in distribution] if Distro.is_mapping(
             distribution.dtype) else None)
         self.alias, self.prob = self._make_table()
@@ -779,8 +780,8 @@ class Sample:
         """
 
         # make temp alias and prob arrays
-        alias = [0 for _ in range(self.n)]
-        prob = [0 for _ in range(self.n)]
+        alias = [None for _ in range(self.n)]
+        prob = [None for _ in range(self.n)]
 
         # create worklists for managing the construction of alias and prob
         small = []
@@ -791,26 +792,26 @@ class Sample:
             ## depending on dtype, building worklists along the way.
             ## time: Θ(n)
             p_i = self.iprob(i) * self.n  # scale prob by n
-            small.append(i) if p_i < 1 else large.append(i)
+            small.append((p_i, i)) if p_i < 1 else large.append((p_i, i))
 
         while len(small) and len(large):
             ## time: O(n)
-            l = small.pop()
-            g = large.pop()
+            p_l, l = small.pop()
+            p_g, g = large.pop()
 
-            p_l = self.distribution.prob(self.ikey(l))
+            # p_l = self.iprob(l)
             prob[l] = p_l
             alias[l] = g
-            p_g = (self.iprob(g) + p_l) - 1
-            small.append(g) if p_g < 1 else large.append(g)
+            p_g = (p_g + p_l) - 1
+            small.append((p_g, g)) if p_g < 1 else large.append((p_g, g))
 
         while len(large):
             # time: at most O(n)
-            prob[large.pop()] = 1
+            prob[large.pop()[1]] = 1
 
         while len(small):
             # this would only occur because of numerical instability
-            prob[small.pop()] = 1
+            prob[small.pop()[1]] = 1
 
         return tuple(alias), tuple(prob)
 
@@ -828,15 +829,16 @@ class Sample:
         return self.alias[i]
 
     def randbin(self):
-        """Select a type from self.distribution using a random index.
+        """Select an outcome from self.distribution using a random index.
 
         Returns:
             An object representing a randomly selected element.
         """
-        try:
-            return self.distribution[self.ikey(self.rand())]
-        except (KeyError, IndexError):
-            pass
+        if self.index_key_map is None:
+            # self.distribution is a sequence, so the first item at
+            # self.rand() is the outcoume
+            return self.distribution[self.ikey(self.rand())][0]
+        return self.ikey(self.rand())  # the outcome is the key itself
 
     def iprob(self, index):
         """Safely get the probability in self.distribution for this index.
@@ -852,7 +854,7 @@ class Sample:
     def ikey(self, index):
         """To make the use of a distribution that could be a collection or
         sequence easier, this function converts an index used for alias and
-        prob to a key that can be used to subscribe to self.distribution.
+        prob to a subscriptable key for self.distribution.
 
         Args:
             index (int): The index of an element in self.prob or self.alias.
