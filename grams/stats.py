@@ -710,7 +710,7 @@ class FreqDist(Distro):
         """
         return jensen_shannon_divergence(
             [Distribution(dict(first_bins)),
-             Distribution(dict(second_bins))])
+             Distribution(dict(second_bins))]) ** .5
 
     @staticmethod
     def cast(obj, target, default=None):
