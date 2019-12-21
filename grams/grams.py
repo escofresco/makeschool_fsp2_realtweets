@@ -21,7 +21,7 @@ from .termgraph import showgraph
 from .utils import (binsearch, invert_dict, LogMethodCalls,
                     merge_data_containing_ints, p)
 
-__all__ = ["Histogram", "Listogram", "Dictogram"]
+__all__ = ["Gram", "Histogram", "Listogram", "Dictogram"]
 
 
 class Gram(FreqDist):  #, metaclass=LogMethodCalls, logs_size=4):
