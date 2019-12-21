@@ -213,60 +213,6 @@ class UtilsTestSuite(unittest.TestCase):
         self.assertEqual(["000", "001", "010", "011", "100"],
                          list(map_to_binary(["a", "b", "c", "d", "e"])))
 
-    def test_histogram_similarity(self):
-        expected_words = ["a", "b"]
-        expected_probs = [0., 1.]
-        actual_words = ["a", "b"]
-        actual_probs = [0., 1.]
-        self.assertEqual(
-            histogram_similarity(expected_words, expected_probs, actual_words,
-                                 actual_probs), 0.)
-
-        actual_probs = list(reversed(actual_probs))
-        self.assertEqual(
-            histogram_similarity(expected_words, expected_probs, actual_words,
-                                 actual_probs), 1.)
-
-        # When binary words are passed directly, order shouldn't be preserved
-        expected_words = ["0", "1"]
-        expected_probs = [0., 1.]
-        actual_words = ["1", "0"]
-        actual_probs = [1., 0.]
-
-        self.assertEqual(
-            histogram_similarity(expected_words, expected_probs, actual_words,
-                                 actual_probs), 0.)
-
-        actual_probs = list(reversed(actual_probs))
-        self.assertEqual(
-            histogram_similarity(expected_words, expected_probs, actual_words,
-                                 actual_probs), 1.)
-
-    def test_generate_samples(self):
-        words = ("apple", "banana")
-        freqs = (50, 50)
-        expected_distro = FreqDist(tuple(zip(words, freqs)))
-
-        def rand_word():
-            return choice(words)
-
-        n_samples = 10000
-
-        # generate_samples returns Counter of keys generated from rand_word
-        actual_distro = FreqDist(generate_samples(n_samples, rand_word))
-
-        # the correct number of samples were generated
-        self.assertEqual(sum(freq for _, freq in actual_distro.bins.items()),
-                         n_samples)
-
-        # given n_samples is large, it's very likely every word appears at least
-        # once
-        self.assertIn("apple", actual_distro)
-        self.assertIn("banana", actual_distro)
-
-        # expected_distro and actual_distro should be nearly identical
-        self.assertAlmostEqual(expected_distro.similarity(actual_distro), 0, 3)
-
     def test_binsearch(self):
         words = sorted(small_data.words)
         self.assertEqual(binsearch((), ""), -1)
