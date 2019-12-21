@@ -9,7 +9,9 @@ Example:
     sample = Sample(distro)
 
 Attributes:
-    FreqDist: A data structure for managing generic two-dimensional data.
+    Distro: A data structure for managing generic two-dimensional data.
+    FreqDist: A data structure for managing groups of occurences and the
+        number of times they occur.
     Sample: Randomly choose an element in a FreqDist in constant time.
 """
 from array import array
@@ -17,7 +19,8 @@ from collections import Counter, defaultdict, namedtuple
 from fractions import Fraction
 from functools import lru_cache
 from random import choice, random, randrange
-from typing import Hashable, Iterable
+from typing import (Hashable, Iterable, MutableMapping, MutableSequence,
+                    Sequence)
 
 from dit.divergences import jensen_shannon_divergence
 from dit import Distribution
@@ -37,9 +40,9 @@ class Distro:
     Style Guide`_
 
     Args:
-        bins: Can be any iterable object (such as dict() or list()). But if
-            it isn't hashable, it must be subscriptable. Every column of bins
-            must also be independently homogeneous.
+        bins: Can be a subclass of dict, list, or tuple. Must be either hashable
+        or subscriptable. Every column of bins must also be independently
+        homogeneous.
 
     Attributes:
         bins: The distribution data.
@@ -53,27 +56,27 @@ class Distro:
        http://google.github.io/styleguide/pyguide.html
     """
 
-    __slots__ = ("bins", "dtype", "bin_dtype")
+    __slots__ = ("bins", "dtype", "bin_dtype", "is_sorted")
 
-    def __init__(self, bins):
+    def __init__(self, bins, dtype=None, is_sorted=False):
+        if not Distro.is_bins(type(bins)):
+            raise InvalidTypeError("Bins must either be a mapping or "
+                                   "sequence.")
 
         if isinstance(bins, str):
             raise InvalidDataTypeError("Strings are accepted. bins must be a "
                                        "two-dimensional iterable object.")
 
-        if (not issubclass(type(bins), dict) and
-                not hasattr(bins, "__getitem__")):
-            ## bins is neither the subclass of dict nor subscriptable
-            raise InvalidDataTypeError("All dict subclasses and most "
-                                       "subscriptable objects are accepted, but"
-                                       f"\n{bins} is none of these.")
         self.bins = bins
-        self.dtype = type(bins)
+        self.dtype = Distro.classify_dtype(
+            type(bins)) if dtype is None else dtype
 
         # assign dict_items if bins is a subclass of dict, otherwise bins
         # is expected to accept integers as indexes.
         self.bin_dtype = type(bins.items(
-        ) if issubclass(type(bins), dict) else bins[0]) if len(bins) else None
+        ) if Distro.is_mapping(type(bins)) else bins[0]) if len(bins) else None
+
+        self.is_sorted = is_sorted
 
     def __repr__(self):
         return "\n" + "\n".join(f"{attr}: {getattr(self, attr)}"
@@ -83,7 +86,15 @@ class Distro:
     def __len__(self):
         return len(self.bins)
 
-    def find(self, target, key=None, is_sorted=False):
+    def __contains__(self, key):
+        if Distro.is_mapping(self.dtype):
+            return key in self.bins
+        return self.find(key) is not None
+
+    def __iter__(self):
+        yield from self.bins
+
+    def find(self, target, key=None):
         """Search through self.bins for val, with an extra speed-up if
         the data for self.bins is already sorted.
 
@@ -95,8 +106,6 @@ class Distro:
                     find.
             key: This is called on every element being searched. Expected to
                 return a new element to check instead.
-            is_sorted: False, by default. Passing True here indicates that
-                the first column of self.bins is sorted.
 
         Returns:
             If target is found, either its index or corresponding key will be
@@ -132,39 +141,35 @@ class Distro:
             # return True if target returns True for any element in key_map
             return any(map(target, key_map))
 
-        if issubclass(self.dtype, dict):
+        def has_match(possible_vals):
+            ## check if any top-level value in possible_vals is a match
+            if isinstance(possible_vals, Iterable):
+                return any(map(is_match, possible_vals))
+            return is_match(possible_vals)
+
+        if self.dtype is dict:
             ## dict subclass
             for cur_key, cur_val in self.bins.items():
                 if is_match(cur_val):
                     return cur_key
-
-        # elif is_sorted:
+        # elif self.is_sorted:
         #     ## sorted sequence
         #     ## use binary search for sorted first column
         #     idx = binsearch(self.bins, target)
-        #     if idx > -1:
-        #         return idx
         #
         #     ## use linear search for search for second column
-        #     for i, (_, elm) in enumerate(self.bins):
-        #         if type(elm) is not type(val):
-        #             ## knowing the homogeneity invariant is maintained, no
-        #             ## other elements in this column would be a match
-        #             break
-        #         if target(elm.__eq__):
+        #     for i, (_, outcome) in enumerate(self.bins):
+        #         if has_match(outcome):
         #             return i
         else:
             ## sequence
             for i, bin in enumerate(self.bins):
-                if any(map(is_match, bin)):
+                if has_match(bin):
                     ## is_match returned True for at least one element in bin
                     return i
 
     def show(self):
         """Visualize the data contained within this class.
-
-        Args:
-            key: An optional function can be applied across every bin.
 
         Raises:
             MissingDataError: self.bins is empty, so there's nothing to show.
@@ -173,14 +178,116 @@ class Distro:
             raise MissingDataError("Whoop! It looks like there isn't any data "
                                    "to display.")
 
-        if issubclass(type(self.bins), dict):
+        if Distro.is_mapping(type(self.bins)):
             labels, data = zip(*self.bins.items())
         else:
             labels, data = zip(*self.bins)
+        Distro.show_data(labels, data)
 
+
+    @staticmethod
+    def show_data(labels, data):
+        """Display two-dimensional data in the terminal.
+
+        Args:
+            data: Mapping or sequence with x and y values.
+        """
         # since termgraph uses categories, restructure data as 2d
         data = tuple((elm,) for elm in data)
         showgraph(labels=tuple(map(str, labels)), data=data)
+
+    @staticmethod
+    def is_mutable_sequence(dtype):
+        """Check that an dtype is a mutable sequence, which can be any subclass
+        of list.
+
+        Args:
+            dtype (type): Object type to validate.
+
+        Returns:
+            True if dtype is a valid mutable sequence, False otherwise.
+        """
+        return issubclass(dtype, list)
+
+    @staticmethod
+    def is_immutable_sequence(dtype):
+        """Check that an object is an immutable sequence, which can be any
+        subclass of tuple.
+
+        Args:
+            dtype (type): Object type to validate.
+
+        Returns:
+            True if dtype is a valid immutable sequence, False otherwise.
+        """
+        return issubclass(dtype, tuple)
+
+    @staticmethod
+    def is_sequence(dtype):
+        """Check that an object is a valid sequence, which can be any subclass
+        of tuple or list.
+
+        Args:
+            dtype (type): Object type to validate.
+
+        Returns:
+            True if dtype is a valid sequence, False otherwise.
+        """
+        return (Distro.is_mutable_sequence(dtype) or
+                Distro.is_immutable_sequence(dtype))
+
+    @staticmethod
+    def is_mapping(dtype):
+        """Check that an object is a valid mutable mapping, which can be any subclass
+        of dict.
+
+        Args:
+            dtype (type): Object type to validate.
+
+        Returns:
+            True if dtype is a valid mutable mapping, False otherwise.
+        """
+        return issubclass(dtype, dict)
+
+    @staticmethod
+    def is_bins(dtype):
+        return Distro.classify_dtype(dtype) in {tuple, list, dict}
+
+    @staticmethod
+    def is_valid_dtype(dtype):
+        """Check if dtype can be classified into a generic type.
+
+        Args:
+            dtype (type): Object type to validate against accepted objects.
+
+        Returns:
+            True if dtype can be classified as Mapping, MutableSequence, or
+            ImmutableSequence, False otherwise.
+        """
+        return Distro.classify_dtype(dtype) is not None
+
+    @staticmethod
+    def classify_dtype(dtype):
+        """Classify a datatype as MutableSequence, ImmutableSequence,
+        Mapping, or None.
+
+        Args:
+            dtype (type): Compare this to the nearest accepted data type.
+
+        Returns:
+            The generic type that obj should be classified as, or None if a
+            new type isn't found.
+        """
+
+        if Distro.is_mapping(dtype):
+            return dict
+
+        if Distro.is_immutable_sequence(dtype):
+            return tuple
+
+        if Distro.is_mutable_sequence(dtype):
+            return list
+        return type(None)
 
 
 class FreqDist(Distro):
@@ -219,59 +326,82 @@ class FreqDist(Distro):
         sort_data: Set this to False if sorting data is unnecessary, like if
             you anticipate that searching for tokens will be infrequent.
 
+    Attributes:
+        min_freq (int): Lowest frequency in dataset.
+        max_freq (int): Highest frequency in dataset.
+        token_count (int): Total number of tokens (linguistic units) in dataset.
+        type_count (int): Total number of distinct tokens (types) in dataset.
+        max_token_str_len (int): Longest element when cast to string.
+        max_token_len (int): Length of longest element if element has __len__
+            property, None otherwise.
+        min_token_len (int): Length of shortest element if element has __len__
+            property, None otherwise.
+
     Raises:
-        InvalidDataTypeError: The token_freqs passed to the constructor isn't
+        InvalidDataTypeError: The tokens_freqs passed to the constructor isn't
             an accepted data type.
 
     .. _Zipf's law:
         http://compling.hss.ntu.edu.sg/courses/hg3051/pdf/HG3051-lec05-stats.pdf
     """
-    __slots__ = ("tokens_freqs", "sort_data", "types_freqs", "type_dtype",
-                 "min_freq", "lowest_rank_types", "max_freq",
-                 "highest_rank_types", "max_type_len", "min_type_len",
-                 "online_mean_freq", "online_freq_var", "token_count",
-                 "type_count")
+    __slots__ = (
+        "tokens_freqs",
+        "sort_data",
+        "type_dtype",
+        "min_freq",
+        "lowest_rank_types",
+        "max_freq",
+        "highest_rank_types",
+        "max_token_str_len",
+        "max_token_len",
+        "min_token_len",
+        "online_mean_freq",
+        "online_freq_var",
+        "token_count",
+        "type_count",
+    )
 
     def __init__(self, tokens_freqs, sort_data=True):
         self.sort_data = sort_data
-        if issubclass(type(tokens_freqs), dict):
+
+        # this is the dtype that tokens_freqs will get cast to
+        dtype = Distro.classify_dtype(type(tokens_freqs))
+
+        if Distro.is_mapping(dtype):
             ## tokens_freqs is either a dict or a subclass of it
-            # cast to generic dict
+            ## cast to generic dict
             tokens_freqs = FreqDist.cast(tokens_freqs, dict)
-        elif isinstance(tokens_freqs, Iterable) and hasattr(
-                tokens_freqs, "__getitem__"):
+        elif Distro.is_sequence(dtype):
             if self.sort_data:
                 ## when initialized with something iterable, like a tuple,
-                ## sort and reassign as the same datatype
+                ## sort and reassign as the original datatype.
                 try:
-                    tokens_freqs = FreqDist.cast(sorted(tokens_freqs),
-                                                 tokens_freqs)
+                    tokens_freqs = FreqDist.cast(sorted(tokens_freqs), dtype)
                 except TypeError as e:
-                    InvalidTokenDatatype("Data passed to constructor must be "
-                                         f"homogeneous.\n{e}")
+                    InvalidTokenTypeError("Data passed to constructor must be "
+                                          f"homogeneous.\n{e}")
         else:
             ## tokens_freqs isn't a valid type
-            raise InvalidDataTypeError("tokens_freqs must be a dictionary or "
-                                       "Iterable")
+            raise InvalidTypeError("tokens_freqs must be a mapping or "
+                                   "sequence.")
         # cast values yielded from self._make_table(<>) to the same type as
         # tokens_freqs
-        tokens_freqs = FreqDist.cast(self._make_table(tokens_freqs),
-                                     tokens_freqs)
+        tokens_freqs = FreqDist.cast(self._make_table(tokens_freqs), dtype)
 
-        super().__init__(tokens_freqs)
+        super().__init__(tokens_freqs, dtype=dtype, is_sorted=sort_data)
 
     def __getitem__(self, key):
         """Override magic method.
 
         Args:
-            vals: Depending on the dtype of this distribution, this is a value
-                for get a specific bin.
+            key: Depending on the dtype of this distribution, this is the key or
+                index for getting a specific bin.
 
         Returns:
-            value existing at the bin for key.
+            Value existing at the bin for key.
         """
 
-        if issubclass(type(self.bins), dict):
+        if self.dtype is dict:
             ## hashable, existing vals are expected
             if not isinstance(key, Hashable):
                 raise InvalidKeyError(f"{key} must be hashable.")
@@ -316,57 +446,64 @@ class FreqDist(Distro):
         last_token = None  # last token seen
         running_sum_freq = 0  # sum of frequencies for duplicates of a token
 
-        for i, (token, freq) in enumerate(tokens_freqs.items(
-        ) if issubclass(type(tokens_freqs), dict) else tokens_freqs):
+        for i, (token, freq) in enumerate(
+            (tokens_freqs.items()
+             if Distro.is_mapping(type(tokens_freqs)) else tokens_freqs)):
             ## go through tokens_freqs, constructing a cleaned and validated
             ## copy
             # bin type is tuple if tokens_freqs is dict, otherwise
             # the actual type is the value at tokens_freqs[i]
-            bin_dtype = (tuple if issubclass(type(tokens_freqs), dict) else
+            bin_dtype = (tuple if Distro.is_mapping(type(tokens_freqs)) else
                          type(tokens_freqs[i]))
-            self.max_type_len = max(self.max_type_len, len(token))
-            self.min_type_len = min(self.min_type_len, len(token))
+
+            self.max_token_str_len = max(self.max_token_str_len, len(str(token)))
 
             ##
-            # Assignment
+            # Initialization
             ##
             if self.type_dtype is None:
                 ## this is almost certainly the first iteration
                 ## assignment is safe
                 self.type_dtype = type(token)
 
+
+            if (self.max_token_len is self.min_token_len is None and hasattr(token, "__len__")):
+                self.max_token_len = self.min_token_len = len(token)
+
             ##
             # Validation
             ##
             if self.type_dtype is not type(token):
-                raise InvalidTokenDatatype("Data must be homogeneous.")
+                raise HeterogeneousTypeError("Token types are inconsistent. "
+                                             "Data must be homogeneous.")
 
             if not isinstance(token, Hashable):
-                raise InvalidTokenError(f"Token {token} must be hashable.")
+                raise InvalidTokenTypeError(f"Token {token} must be hashable.")
 
             if not isinstance(freq, int):
-                raise InvalidFrequencyError(
+                raise InvalidFrequencyTypeError(
                     f"Frequency {freq} must be an integer.")
 
-            if self.min_type_len != self.max_type_len:
-                if self.type_dtype is str:
-                    pass
-                elif self.type_dtype is tuple:
-                    raise ImproperTupleFormatError(
-                        f"When using a sequence, token/type length must be "
-                        "homogeneous, but found "
-                        f"conflicting lengths {len(token)} and "
-                        f"{self.max_type_len}")
-                else:
-                    raise ImproperDataFormatError(
-                        f"When using a sequence, token/type length must be "
-                        "homogeneous, but found "
-                        f"conflicting lengths {len(token)} and "
-                        f"{self.max_type_len}")
+            if hasattr(token, "__len__"):
+                ## Validating token length only makes sense for mappings and
+                ## sequences.
+                self.max_token_len = max(self.max_token_len, len(token))
+                self.min_token_len = min(self.min_token_len, len(token))
+
+                if self.min_token_len != self.max_token_len:
+                    msg = (
+                        "When using a sequence, token/type length must be "
+                        f"homogeneous, but found conflicting lengths {len(token)} "
+                        f"and {self.max_token_len}")
+                    if Distro.is_immutable_sequence(self.type_dtype):
+                        raise ImproperTupleFormatError(msg)
+                    elif Distro.is_mutable_sequence(self.type_dtype):
+                        raise ImproperListFormatError(msg)
+
             ##
             # Logic
             ##
-            if self.sort_data and issubclass(type(tokens_freqs), dict):
+            if self.sort_data and type(tokens_freqs) is dict:
                 ## since tokens_freqs is guaranteed to be sorted, remove
                 ## duplicate tokens and add frequencies together
                 if token != last_token:
@@ -402,15 +539,14 @@ class FreqDist(Distro):
                 yield FreqDist.cast((token, freq), bin_dtype)
 
     def _init_instance_vars(self):
-        """Convenience method for initializing FreqDist instnace variables"""
+        """Convenience method for initializing FreqDist instance variables."""
 
         self.type_dtype = None  # datatype of token
 
         # frequency corresponding to type(s) with lowest rank
         self.min_freq = float("inf")
 
-        # types with the lowest rank, Zipf's law suggests this will be a big
-        # number
+        # types with the lowest rank, Zipf's law suggests this will be big
         self.lowest_rank_types = None
 
         # frequency corresponding to type(s) of first rank (most frequent)
@@ -420,8 +556,11 @@ class FreqDist(Distro):
         # one.
         self.highest_rank_types = None
 
-        self.max_type_len = float("-inf")  # largest length of a type
-        self.min_type_len = float("inf")  # smallest length of a type
+        self.max_token_str_len = float("-inf") # longest str(token)
+
+        # type size is None by default since type may be a number or string
+        self.max_token_len = None  # largest length of a type
+        self.min_token_len = None  # smallest length of a type
         self.online_mean_freq = Avg(
         )  # track average as we pass through tokens_freqs
         self.online_freq_var = Var(
@@ -462,6 +601,63 @@ class FreqDist(Distro):
 
         self.type_count += 1
 
+    def freq(self, bin):
+        """Find the number of occurences for bin data in logarithmic to linear
+        time.
+
+        Args:
+            bin: Data which is expected to have a frequency.
+
+        Returns:
+            Frequency of bin data.
+        """
+        try:
+            if Distro.is_mapping(self.dtype):
+                return self[bin]
+
+            index = self.find(bin)
+            if index is not None:
+                return self.ifreq(index)
+        except Error:
+            raise KeyNotFoundError(f"bin wasn't found.")
+        except:
+            raise
+
+    def ifreq(self, key):
+        """Find the number of occurences for data at key, in constant time.
+
+        Args:
+            key: The index or key to the bin with the desired frequency.
+
+        Returns:
+            Frequency of bin data at key.
+        """
+        try:
+            outcome = self[key]
+            if isinstance(outcome, Iterable):
+                return outcome[-1]
+            return outcome
+        except:
+            raise
+
+    def padded_bins(self, max_len):
+        """Convert outcomes in freqdist.bins to have same length as max_len
+        by padding with whitespace. Convert frequencies in bins to
+        probabilities.
+
+        Args:
+            max_len (int): All outcomes in self.bins are converted to strings
+                of uniform length by padding the ends with whitespace.
+
+        Yields:
+            The next bin with converted to a string of max_len and frequency
+            converted to probability.
+        """
+        for outcome, freq in (self.bins.items() if Distro.is_mapping(self.dtype) else self.bins):
+            outcome = str(outcome)
+            yield (outcome + " " * (max_len - len(outcome)),
+                   Fraction(freq, self.token_count))
+
     def prob(self, bin):
         """Lookup the type and frequency at bin and return it's probability.
 
@@ -472,10 +668,47 @@ class FreqDist(Distro):
             frequency / tokens_count, the probability of type being observed.
         """
         try:
-            prob = Fraction(self[bin][1], self.token_count)
-        except Error:
+            return Fraction(
+                self[bin] if Distro.is_mapping(self.dtype) else self[bin][1],
+                self.token_count)
+        except:
             raise
-        return prob
+
+    def similarity(self, other):
+        """Calculate the distance between two distributions.
+
+        Args:
+            other (Distro): Distribution that similarity is calculated from.
+
+        Returns:
+            float ∈ [1., 0.]
+        """
+        max_len = max(self.max_token_str_len, other.max_token_str_len)
+
+        return FreqDist.jensen_shannon_distance(self.padded_bins(max_len), other.padded_bins(max_len))
+
+    @staticmethod
+    def jensen_shannon_distance(first_bins, second_bins):
+        """Based on Kullback-Leibler divergence, `Jensen-Shannon divergence`_ is
+        used to find the similarity between two probability distributions. This
+        method calculates distance, which is the square root of Jensen-Shannon
+        divergence.
+
+        Args:
+            first_bins: This is a collection of <bin, probability> pairs. <bin>
+                must be a unique string of homogeneous length. <probability> is
+                a float.
+            second_bin: This collection of <bin, probability> pairs is compared
+                to the first.
+        Returns:
+            float ∈ [1., 0.]
+
+        ..  _Jensen-Shannon divergence:
+            https://en.wikipedia.org/wiki/Jensen%E2%80%93Shannon_divergence
+        """
+        return jensen_shannon_divergence(
+            [Distribution(dict(first_bins)), Distribution(dict(second_bins))])
+
 
     @staticmethod
     def cast(obj, target, default=None):
@@ -496,7 +729,16 @@ class FreqDist(Distro):
             obj_with_same_type_as_target = target_type(obj)
         except TypeError as e:
             if default is None:
-                raise InvalidDataTypeError(str(e))
+                if str(e).startswith("cannot convert dictionary update "
+                                     "sequence element"):
+                    ## This message, shows up when an improperly formatted`
+                    ## object is being cast to dict.
+                    raise ImproperDataFormatError("It looks like an improperly "
+                                                  "formatted object is being "
+                                                  "cast to dict. Make sure "
+                                                  f"{obj} consists of exactly "
+                                                  "two elements per index.")
+                raise InvalidTypeError(str(e))
             else:
                 obj_with_same_type_as_target = FreqDist.cast(obj, default)
         return obj_with_same_type_as_target
@@ -516,11 +758,15 @@ class Sample:
     Args:
         distribution (FreqDist): Any FreqDist object accepted.
     """
-    __slots__ = ("distribution", "n", "alias", "prob")
+    __slots__ = ("distribution", "n", "index_key_map", "alias", "prob")
 
     def __init__(self, distribution: FreqDist):
         self.distribution = distribution
         self.n = len(distribution)
+
+
+        self.index_key_map = ([k for k in distribution] if Distro.is_mapping(
+            distribution.dtype) else None)
         self.alias, self.prob = self._make_table()
 
     def __repr__(self):
@@ -533,27 +779,29 @@ class Sample:
         """
 
         # make temp alias and prob arrays
-        alias = [0 for _ in range(self.n)]  #array("L", [0] * self.n)
-        prob = [0 for _ in range(self.n)]  #array("d", [0] * self.n)
+        alias = [0 for _ in range(self.n)]
+        prob = [0 for _ in range(self.n)]
 
         # create worklists for managing the construction of alias and prob
-        small = []  #array("L")
-        large = []  #array("L")
+        small = []
+        large = []
 
         for i in range(self.n):
-            # build worklists
-            # time: Θ(n)
-            p_i = self.distribution.prob(i) * self.n  # scale prob by n
+            ## Iterate through the indices or keys of self.distribution
+            ## depending on dtype, building worklists along the way.
+            ## time: Θ(n)
+            p_i = self.iprob(i) * self.n  # scale prob by n
             small.append(i) if p_i < 1 else large.append(i)
 
         while len(small) and len(large):
-            # time: O(n)
+            ## time: O(n)
             l = small.pop()
             g = large.pop()
-            p_l = self.distribution.prob(l)
+
+            p_l = self.distribution.prob(self.ikey(l))
             prob[l] = p_l
             alias[l] = g
-            p_g = (self.distribution.prob(g) + p_l) - 1
+            p_g = (self.iprob(g) + p_l) - 1
             small.append(g) if p_g < 1 else large.append(g)
 
         while len(large):
@@ -579,21 +827,40 @@ class Sample:
             return i
         return self.alias[i]
 
-    def randword(self):
+    def randbin(self):
         """Select a type from self.distribution using a random index.
 
         Returns:
             An object representing a randomly selected element.
-
         """
-        return self.distribution[self.rand()]
+        try:
+            return self.distribution[self.ikey(self.rand())]
+        except (KeyError, IndexError):
+            pass
 
-    def randwords(self, n):
-        """Select random words.
+    def iprob(self, index):
+        """Safely get the probability in self.distribution for this index.
 
-        Yields:
-            An object representing a randomly selected element.
+        Args:
+            index: (int): The index of an element in self.prob or self.alias.
+
+        Returns:
+            float representing a probability in self.distribution.
         """
-        while n > 0:
-            yield self.randword()
-            n -= 1
+        return self.distribution.prob(self.ikey(index))
+
+    def ikey(self, index):
+        """To make the use of a distribution that could be a collection or
+        sequence easier, this function converts an index used for alias and
+        prob to a key that can be used to subscribe to self.distribution.
+
+        Args:
+            index (int): The index of an element in self.prob or self.alias.
+
+        Returns:
+            int if self.distribution is sequence, otherwise hashable key is
+            returned.
+        """
+        if self.index_key_map is None:
+            return index
+        return self.index_key_map[index]

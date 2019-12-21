@@ -12,8 +12,10 @@ import sys
 from typing import Iterable, Optional, Tuple, Union
 
 from coverage import Coverage, CoverageData
+from nltk import pos_tag, sent_tokenize, word_tokenize
 
 from .online import Var
+from .root_exceptions import *
 from .stats import FreqDist, Sample
 from .termgraph import showgraph
 from .utils import (binsearch, invert_dict, LogMethodCalls,
@@ -31,7 +33,7 @@ class Gram(FreqDist):  #, metaclass=LogMethodCalls, logs_size=4):
     Args:
         data: This represents the input to a probability distribution function.
     """
-    __slots__ = ("data_frequency")
+    __slots__ = ("data_frequency", "sampler")
 
     def __init__(self, data_frequency):
         super().__init__(data_frequency)
@@ -40,11 +42,21 @@ class Gram(FreqDist):  #, metaclass=LogMethodCalls, logs_size=4):
     def similarity(self, other):
         return super().similarity(other)
 
-    def frequency(self, word):
-        raise NotImplementedError()
+    def freq(self, bin):
+        """Find the frequency of bin.
+        Args:
+            bin: The object to find the frequency of.
+        """
+        try:
+            freq = super().freq(bin)
+        except (KeyError, IndexError):
+            freq = None
+        except:
+            raise
+        return 0 if freq is None else freq
 
     def sample(self):
-        return self.sampler.randword()
+        return self.sampler.randbin()
 
     @staticmethod
     def bin_search(array, prob):
@@ -63,69 +75,109 @@ class Gram(FreqDist):  #, metaclass=LogMethodCalls, logs_size=4):
                 hi = mid
         return None
 
+    @staticmethod
+    def sents(block_text):
+        """Convert multiline text into an array of sentences.
+
+        Args:
+            block_text (str): Can be any string.
+
+        Yields:
+            The next sentence as a tuple of words.
+        """
+        for sentence in sent_tokenize(block_text):
+            yield word_tokenize(sentence)
+
+    @staticmethod
+    def pos_sents(block_text):
+        """Convert multiline text into an array of sentences, with each word tagged
+        with part of speech.
+
+        Args:
+            block_text (str): Can be any string.
+
+        Yields:
+            The next sentence as a tuple of word and pos_tag tuples.
+        """
+        for sentence in sent_tokenize(block_text):
+            yield pos_tag(word_tokenize(sentence))
+
 
 class Histogram(Gram, metaclass=LogMethodCalls, logs_size=4):
 
-    __slots__ = ("source_text", "word_to_freq", "sampler", "_logs_")
+    __slots__ = ("corpus", "tokens_freqs", "sampler")
 
-    def __init__(self, source_text=None, word_to_freq=None):
+    def __init__(self, corpus=None, tokens_freqs=None, use_pos_tags=False):
         """Takes text or a pregenerated histogram as input."""
-        self.source_text = source_text
-        word_to_freq = (word_to_freq
-                        if word_to_freq else self.as_word_to_freq())
-        super().__init__(word_to_freq)
+        default_dtype = dict
+        if tokens_freqs is None:
+            dtype = default_dtype
+            if corpus is None:
+                super().__init__(default_dtype())
+            else:
+                super().__init__(default_dtype(self._make_token_freq(corpus, use_pos_tags=use_pos_tags)))
+        else:
+            dtype = type(tokens_freqs)
+            super().__init__(tokens_freqs)
         self.sampler = Sample(self)
 
-    def as_word_to_freq(self):
-        word_to_freq = defaultdict(int)
+    def _make_token_freq(self, corpus, use_pos_tags):
+        yield from Gram.pos_sents(corpus) if use_pos_tags else Gram.sents(corpus)
 
-        for line in self.source_text:
-            for word in self.line_as_words(line):
-                sword = "".join(word)
-                word_to_freq[sword] += 1
-                new_freq = word_to_freq[sword]
-        return word_to_freq
-
-    def frequency(self, word):
-        return self[word]
+    def frequency(self, token):
+        self.rebuild_with_latent_wordcounts()
+        try:
+            return super().freq(token)
+        except:
+            raise
 
     def sample(self):
-        return self.sampler.randword()
+        """Return a word from this histogram, randomly sampled by weighting
+        each word's probability of being chosen by its observed frequency."""
+        self.rebuild_with_latent_wordcounts()
+        try:
+            return super().sampler.randbin()
+        except:
+            raise
 
 
 class Listogram(Gram, metaclass=LogMethodCalls, logs_size=4):
-    """Listogram is a histogram implemented as a subclass of the list type."""
+    """This is a histogram that strictly enforces the use of tuples where
+    applicable.
 
-    __slots__ = ("temp_word_to_freq", "sampler", "_logs_")
+    Args:
+        token_list: A list of tokens to generate types and frequencies from.
+    """
 
-    def __init__(self, word_list=None):
-        """Initialize this histogram as a new list and count given words."""
+    __slots__ = ("tokens_list", "tmp_token_freq", "sampler")
 
+    def __init__(self, tokens_list=None):
         # hold a temporary array as new (word,counts) get added.
         # add these to new Listogram object when add_count method calls are
         # finished.
-        self.temp_word_to_freq = []
+        self.tmp_token_freq = []
 
-        if word_list is not None:
-            super().__init__(tuple(Counter(word_list).items()))
+        if tokens_list is not None:
+            super().__init__(tuple(Counter(tokens_list).items()))
         else:
-            super().__init__({})
-        self.sampler = Sample(self)
+            super().__init__(())
 
-    def add_count(self, word, count=1):
+    def add_count(self, token, count=1):
         """Increase frequency count of given word by given count amount."""
         # build temp array; duplicates are handled later
-        self.temp_word_to_freq.append((word, count))
+        self.tmp_token_freq.append((token, count))
 
-    def frequency(self, word):
-        """Return frequency count of given word, or 0 if word is not found."""
+    def frequency(self, token):
         self.rebuild_with_latent_wordcounts()
-        return self.get(word, 0)
+        try:
+            return super().freq(token)
+        except:
+            raise
 
-    def __contains__(self, word):
+    def __contains__(self, token):
         """Return boolean indicating if given word is in this histogram."""
         self.rebuild_with_latent_wordcounts()
-        return super().__contains__(word)
+        return super().__contains__(token)
 
     def _index(self, target):
         """Return the index of entry containing given target word if found in
@@ -137,69 +189,79 @@ class Listogram(Gram, metaclass=LogMethodCalls, logs_size=4):
         """Return the index of entry containing given target word if found in
         this histogram, or None if target word is not found."""
         self.rebuild_with_latent_wordcounts()
-        idx = bin_search(self.word_to_freq, target, key=lambda x: x[0])
-        if idx > -1:
-            return idx
+        return self.find(target)
 
     def sample(self):
         """Return a word from this histogram, randomly sampled by weighting
         each word's probability of being chosen by its observed frequency."""
         self.rebuild_with_latent_wordcounts()
-        return self.sampler.randword()
+        try:
+            return self.sampler.randbin()
+        except:
+            raise
 
     def rebuild_with_latent_wordcounts(self):
-        """Reconstructs object if last method called was add_count."""
+        """Reconstruct this object if last method called was add_count."""
         if len(self._logs_) > 2 and self._logs_[-1 - 2].name == "add_count":
             # if the most recent class or instance method call wasn't add_count,
             # re-initialize current object.
             super().__init__(
-                merge_data_containing_ints(self.word_to_freq,
-                                           self.temp_word_to_freq))
+                merge_data_containing_ints(self.bins, self.tmp_token_freq))
             self.sampler = Sample(self)
 
 
-class Dictogram(Gram, metaclass=LogMethodCalls, logs_size=4
-               ):  #FreqDist, metaclass=LogMethodCalls, logs_size=4):
-    """This histogram uses dict as it's primary datastructure.
+class Dictogram(Gram, metaclass=LogMethodCalls, logs_size=4):
+    """This is a histogram that strictly enforces the use of dict types where
+    applicable.
 
     Args:
-
-
+        tokens_list: A list of tokens to be consolidated into types and
+            their corresponding freqencies.
     """
 
-    __slots__ = ("temp_word_to_freq", "word_list", "sampler")
+    __slots__ = ("tmp_token_freq", "tokens_list", "sampler")
 
-    def __init__(self, word_list=None):
+    def __init__(self, tokens_list=None):
 
         # Temporarily hold the (word,count) added from add_count, which will
         # be added to a new distribution as part of a new Dictogram
-        self.temp_word_to_freq = defaultdict(int)
+        self.tmp_token_freq = defaultdict(int)
 
-        if word_list is not None:
-            super().__init__(Counter(word_list))
+        if tokens_list is not None:
+            super().__init__(Counter(tokens_list))
         else:
             super().__init__({})
-        self.sampler = Sample(self)
+
+    def __contains__(self, token):
+        """Return boolean indicating if given word is in this histogram."""
+        self.rebuild_with_latent_wordcounts()
+        return super().__contains__(token)
 
     def items(self):
         self.rebuild_with_latent_wordcounts()
-        return self.word_to_freq.items()
+        return self.bins.items()
 
-    def add_count(self, word, count=1):
+    def add_count(self, token, count=1):
         """TIME EXPENSIVE: must call super().__init__() every time
         Increase frequency count of given word by given count amount."""
-        self.temp_word_to_freq[word] += count
+        self.tmp_token_freq[token] += count
 
-    def frequency(self, word):
+    def frequency(self, token):
         """Return frequency count of given word, or 0 if word is not found."""
         self.rebuild_with_latent_wordcounts()
-        return self.get(word, 0)
+        try:
+            return super().freq(token)
+        except:
+            raise
 
     def sample(self):
         """Return a word from this histogram, randomly sampled by weighting
         each word's probability of being chosen by its observed frequency."""
         self.rebuild_with_latent_wordcounts()
-        return self.sampler.randword()
+        try:
+            return self.sampler.randbin()
+        except:
+            raise
 
     def rebuild_with_latent_wordcounts(self):
         """Reconstructs object if last method called was add_count."""
@@ -207,8 +269,7 @@ class Dictogram(Gram, metaclass=LogMethodCalls, logs_size=4
             # if the most recent class or instance method call wasn't add_count,
             # re-initialize current object.
             super().__init__(
-                merge_data_containing_ints(self.word_to_freq,
-                                           self.temp_word_to_freq))
+                merge_data_containing_ints(self.bins, self.tmp_token_freq))
             self.sampler = Sample(self)
 
 

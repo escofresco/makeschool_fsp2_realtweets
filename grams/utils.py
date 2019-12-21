@@ -8,18 +8,14 @@ from os.path import exists, join
 from random import choice, randrange
 from time import time
 
-from dit.divergences import jensen_shannon_divergence
-from dit import Distribution
-
 from .online import Avg
 
 __all__ = [
-    "LogMethodCalls", "sample_size", "histogram_similarity", "is_binary_format",
-    "map_to_binary", "invert_dict", "randints", "rand_word_distro",
-    "generate_samples", "binsearch", "capture_stdout", "recur_chmod", "p",
-    "ismethod", "merge_nonsequentials_containing_ints",
-    "merge_sequentials_containing_ints", "merge_data_containing_ints",
-    "run_iter_code", "run_code"
+    "LogMethodCalls", "sample_size", "is_binary_format", "map_to_binary",
+    "invert_dict", "randints", "rand_word_distro",
+    "binsearch", "capture_stdout", "recur_chmod", "p", "ismethod",
+    "merge_nonsequentials_containing_ints", "merge_sequentials_containing_ints",
+    "merge_data_containing_ints", "run_iter_code", "run_code"
 ]
 
 
@@ -99,26 +95,6 @@ class LogMethodCalls(type):
 
 def sample_size(std_dev, margin_of_error, z_val=1.96):
     return ceil(((std_dev * z_val) / margin_of_error)**2)
-
-
-def histogram_similarity(first_distro_words, first_distro_probs,
-                         second_distro_words, second_distro_probs):
-    """
-    Takes two distributions, each a tuple of words and their corresponding
-    probabilities.
-    """
-    error_msg = lambda w, p: ValueError(
-        f"the lengths of {w} and {p} must be equal")
-
-    if len(first_distro_words) != len(first_distro_probs):
-        raise error_msg(first_distro_words, first_distro_probs)
-
-    if len(second_distro_words) != len(second_distro_probs):
-        raise error_msg(second_distro_words, second_distro_probs)
-    expected_distribution = Distribution(first_distro_words, first_distro_probs)
-    actual_distribution = Distribution(second_distro_words, second_distro_probs)
-    return jensen_shannon_divergence(
-        [expected_distribution, actual_distribution])
 
 
 def is_binary_format(string):
@@ -208,14 +184,6 @@ def randints(n_ints,
 
 def rand_word_distro(n_words, words, variance):
     pass
-
-
-def generate_samples(n, func):
-    counts = Counter()
-    for _ in range(n):
-        res = func()
-        counts[res] += 1
-    return counts
 
 
 def binsearch(array, target):
