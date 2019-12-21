@@ -6,7 +6,7 @@ ERRMSG_PREFIX="${MSG_DECOR} Whoops! git push validation failed :0 \
 ${MSG_DECOR}${NEWLINE}"
 
 # run tests under coverage before push
-coverage run -m unittest discover tests
+coverage run -m unittest discover
 
 # this is the exit code of the last command
 COV_EXITCODE=$?
