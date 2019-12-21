@@ -36,10 +36,12 @@ __all__ = [
     "ImproperListFormatError",
     "ImproperTupleFormatError",
     "InvalidDataError",
+    "InvalidTypeError",
+    "HeterogeneousTypeError",
     "InvalidTokenError",
-    "InvalidTokenDatatype",
-    "InvalidFrequencyError",
-    "InvalidDataTypeError",
+    "InvalidTokenTypeError",
+    "InvalidFrequencyTypeError",
+    "InvalidTypeError",
     "InvalidIndexError",
     "IndexNotFoundError",
     "KeyError",
@@ -47,6 +49,8 @@ __all__ = [
     "InvalidKeyError",
     "DoesNotExistError",
     "MissingDataError",
+    "CollectionError",
+    "SequenceError",
 ]
 
 
@@ -80,27 +84,37 @@ class InvalidDataError(Error):
     pass
 
 
+class InvalidTypeError(Error):
+    """The provided data type was not valid."""
+    pass
+
+
+class HeterogeneousTypeError(InvalidTypeError):
+    """Raised for data that isn't supposed to be heterogeneous."""
+    pass
+
+
 class InvalidTokenError(InvalidDataError):
     """The provided token was not valid."""
     pass
 
 
-class InvalidTokenDatatype(InvalidTokenError):
+class InvalidTokenTypeError(InvalidTokenError):
     """The provided token's datatype is invalid."""
     pass
 
 
-class InvalidFrequencyError(InvalidDataError):
+class InvalidFrequencyTypeError(InvalidTypeError):
     """The provided frequency was not valid."""
     pass
 
 
-class InvalidDataTypeError(InvalidDataError):
-    """The datatype of the provided data is invalid."""
+class SequenceError(Error):
+    """Base-class for all sequence-related errors"""
     pass
 
 
-class IndexError(Error):
+class IndexError(SequenceError):
     """Base-class for index errors"""
     pass
 
@@ -115,12 +129,17 @@ class InvalidIndexError(IndexError):
     pass
 
 
-class KeyError(Error):
+class CollectionError(Error):
+    """Base-class for errors to do with collections"""
+    pass
+
+
+class KeyError(CollectionError):
     """Base-class to the use of keys with mappable objects."""
     pass
 
 
-class KeyNotFoundError(Error):
+class KeyNotFoundError(KeyError):
     """The provided key doesn't exist in a mappable object."""
     pass
 
