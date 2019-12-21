@@ -10,6 +10,7 @@ from grams.grams import Covergram, Gram, FreqDist
 from grams.root_exceptions import *
 from grams.utils import capture_stdout
 
+
 class GramTestSuite(unittest.TestCase):
 
     def test_gram_correct_parent(self):
@@ -67,8 +68,7 @@ class GramTestSuite(unittest.TestCase):
                       ['blue', 1]])
         expected = "\nblue: ▇ 1.00 \nfish: ▇▇▇▇ 4.00 \none : ▇ 1.00 \nred : ▇ 1.00 \ntwo : ▇ 1.00 \n\n"
 
-        self.assertCountEqual(
-            Counter(expected.split(" ")),
-            Counter(capture_stdout(dgram.show).split(" ")))
+        self.assertCountEqual(Counter(expected.split(" ")),
+                              Counter(capture_stdout(dgram.show).split(" ")))
         self.assertEqual(expected, capture_stdout(tgram.show))
         self.assertEqual(expected, capture_stdout(lgram.show))

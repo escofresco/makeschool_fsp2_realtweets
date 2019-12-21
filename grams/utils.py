@@ -12,8 +12,8 @@ from .online import Avg
 
 __all__ = [
     "LogMethodCalls", "sample_size", "is_binary_format", "map_to_binary",
-    "invert_dict", "randints", "rand_word_distro",
-    "binsearch", "capture_stdout", "recur_chmod", "p", "ismethod",
+    "invert_dict", "randints", "rand_word_distro", "binsearch",
+    "capture_stdout", "recur_chmod", "p", "ismethod",
     "merge_nonsequentials_containing_ints", "merge_sequentials_containing_ints",
     "merge_data_containing_ints", "run_iter_code", "run_code"
 ]

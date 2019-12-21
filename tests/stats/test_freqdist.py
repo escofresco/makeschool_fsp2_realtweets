@@ -18,8 +18,13 @@ from tests.data import (no_word_data, one_word_data, small_data,
 
 @dataclass
 class TD:
-    color_tuple = (("orange", 10), ("yellow", 16), ("green", 8), ("blue", 20),
+    COLOR_TUPLE = (("orange", 10), ("yellow", 16), ("green", 8), ("blue", 20),
                    ("grey", 8), ("indigo", 8), ("pink", 10))
+    COLOR_TUPLE_SCALED = (("orange", 100), ("yellow", 160), ("green", 80),
+                          ("blue", 200), ("grey", 80), ("indigo", 80), ("pink",
+                                                                        100))
+    UNIFORM_TUPLE = (("Harry", 1), ("secretly", 1), ("doesn't", 1), ("like", 1),
+                     ("Gryffindor", 1))
 
 
 class FreqDistTestSuite(unittest.TestCase):
@@ -575,7 +580,6 @@ class FreqDistTestSuite(unittest.TestCase):
         with self.assertRaises(InvalidTypeError):
             FreqDist.cast(123, [1, 2, 3], (4, 5, 6))
 
-
     def test_jensen_shannon_distance(self):
         expected_bins = (("a", 0.), ("b", 1.))
         actual_bins = (*expected_bins,)
@@ -621,3 +625,26 @@ class FreqDistTestSuite(unittest.TestCase):
         self.assertEqual(Fraction(1, 10), freqdist.prob(4))
         self.assertEqual(Fraction(1, 10), freqdist.prob(5))
         self.assertEqual(Fraction(1, 8), freqdist.prob(6))
+
+    def test_similarity_for_scaled_data(self):
+        freqdist = FreqDist(TD.COLOR_TUPLE)
+        freqdist_scaled = FreqDist(TD.COLOR_TUPLE_SCALED)
+
+        # Since similarity compares probabilities, a distro compared with
+        # a scaled version of itself should be 0.
+        self.assertEqual(0., freqdist.similarity(freqdist_scaled))
+
+        # Check the commutative property holds
+        self.assertEqual(0., freqdist_scaled.similarity(freqdist))
+
+    def test_uniform_distros_are_similar(self):
+        freqdist = FreqDist(TD.UNIFORM_TUPLE)
+
+        samples = list(map(list, TD.UNIFORM_TUPLE))
+
+        for _ in range(1000):
+            # Increment a random element from TD.UNIFORM_TUPLE
+            rand_idx = randrange(len(TD.UNIFORM_TUPLE))
+            samples[rand_idx][1] += 1
+        uniform_freqdist = FreqDist(samples)
+        self.assertAlmostEqual(0., freqdist.similarity(uniform_freqdist), 2)

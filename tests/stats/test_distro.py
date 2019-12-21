@@ -20,6 +20,11 @@ from tests.data import (no_word_data, one_word_data, small_data,
 class TD:
     SORTED_COLOR_FISH_TUPLE = (("blue", 1), ("fish", 4), ("one", 1), ("red", 1),
                                ("two", 1))
+    SORTED_COLOR_FISH_TUPLE_PROBS = (("blue", Fraction(1, 8)),
+                                     ("fish", Fraction(1, 2)), ("one",
+                                                                Fraction(1, 8)),
+                                     ("red", Fraction(1, 8)), ("two",
+                                                               Fraction(1, 8)))
     SHUFFLED_COLOR_FISH_TUPLE = (("fish", 4), ("one", 1), ("blue", 1),
                                  ("red", 1), ("two", 1))
     FISH_MAP = {"blue": 1, "fish": 4, "one": 1, "red": 1, "two": 1}
@@ -361,3 +366,10 @@ class DistroTestSuite(unittest.TestCase):
         self.assertTrue(Distro.is_immutable_sequence(tuple_type))
         self.assertTrue(Distro.is_sequence(tuple_type))
         self.assertEqual(Distro.classify_dtype(tuple_type), tuple)
+
+
+class TestTestData(unittest.TestCase):
+
+    def test_sorted_fish_tuple_probs_sum_to_one(self):
+        self.assertEqual(
+            1., sum(elm[1] for elm in TD.SORTED_COLOR_FISH_TUPLE_PROBS))

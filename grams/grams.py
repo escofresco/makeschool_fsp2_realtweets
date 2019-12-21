@@ -115,14 +115,18 @@ class Histogram(Gram, metaclass=LogMethodCalls, logs_size=4):
             if corpus is None:
                 super().__init__(default_dtype())
             else:
-                super().__init__(default_dtype(self._make_token_freq(corpus, use_pos_tags=use_pos_tags)))
+                super().__init__(
+                    default_dtype(
+                        self._make_token_freq(corpus,
+                                              use_pos_tags=use_pos_tags)))
         else:
             dtype = type(tokens_freqs)
             super().__init__(tokens_freqs)
         self.sampler = Sample(self)
 
     def _make_token_freq(self, corpus, use_pos_tags):
-        yield from Gram.pos_sents(corpus) if use_pos_tags else Gram.sents(corpus)
+        yield from Gram.pos_sents(corpus) if use_pos_tags else Gram.sents(
+            corpus)
 
     def frequency(self, token):
         self.rebuild_with_latent_wordcounts()
