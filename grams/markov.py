@@ -101,7 +101,7 @@ class MarkovChain:
 
 
     def generate(self, n_sentences):
-        pass
+        return " ".join(self.generate_sentence() for _ in range(n_sentences))
 
     @staticmethod
     def print_nested_dict(d):
