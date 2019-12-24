@@ -2,7 +2,7 @@ from collections import Counter, defaultdict
 from dataclasses import dataclass
 import unittest
 
-from grams.generators import MarkovChain
+from grams.markov import MarkovChain
 from grams.grams import Histogram
 from grams.stats import FreqDist
 from grams.utils import generate_samples
