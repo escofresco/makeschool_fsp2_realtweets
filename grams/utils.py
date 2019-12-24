@@ -10,6 +10,7 @@ from time import time
 
 from .online import Avg
 
+
 __all__ = [
     "LogMethodCalls", "sample_size", "is_binary_format", "map_to_binary",
     "invert_dict", "randints", "rand_word_distro", "binsearch",
@@ -227,19 +228,49 @@ def binsearch(array, target):
 
 
 def capture_stdout(func, *args, **kwargs):
-    """Returns the string output of a function.
+    """Capture the standard output of a function and return the string.
 
-    pretty much copied from https://tinyurl.com/wkutfow"""
+    Args:
+        func: A function to be called.
+        *args:
+        **kwargs: The arguments that would be passed to func.
+
+    pretty much copied from https://tinyurl.com/wkutfow
+    """
     sio = StringIO()
     with redirect_stdout(sio):
         func(*args, **kwargs)
     return sio.getvalue()
 
 
+
+
+def generate_samples(n_samples, func, *args, **kwargs):
+    """Call a function a bunch of times and count the results.
+
+    Args:
+        n_samples: Number of time to call the function.
+        func: The function results are counted from.
+        *args
+        **args: The arguments to pass to func.
+
+    Returns:
+        Counter containing results.
+    """
+    samples = Counter()
+    for _ in range(n_samples):
+        res = func(*args, **kwargs)
+        samples[res] += 1
+    return samples
+
 def recur_chmod(dir, *modes):
-    """Takes a directory and variable number of arguments for mode (a file can
-    have multiple permissionsz) and recursively sets mode
+    """Take a directory and variable number of arguments for mode (a file can
+    have multiple permissions) and recursively set mode
     (octal, ex: stat.S_IEXEC) for files.
+
+    Args:
+        dir: Path for direction.
+        *modes: The octal permission for a file.
     """
     if not exists(dir):
         raise NotADirectoryError(f"{dir} not found :^() ")
