@@ -581,22 +581,22 @@ class FreqDistTestSuite(unittest.TestCase):
             FreqDist.cast(123, [1, 2, 3], (4, 5, 6))
 
     def test_jensen_shannon_distance(self):
-        expected_bins = (("a", 0.), ("b", 1.))
-        actual_bins = (*expected_bins,)
+        expected_bins = dict((("a", 0.), ("b", 1.)))
+        actual_bins = dict((*expected_bins.items(),))
         self.assertEqual(
             FreqDist.jensen_shannon_distance(expected_bins, actual_bins), 0.)
 
-        actual_bins = (("a", 1.), ("b", 0.))
+        actual_bins = dict((("a", 1.), ("b", 0.)))
         self.assertEqual(
             FreqDist.jensen_shannon_distance(expected_bins, actual_bins), 1.)
 
         # When binary words are passed directly, order shouldn't be preserved
-        expected_bins = (("0", 0.), ("1", 1.))
-        actual_bins = (*expected_bins,)
+        expected_bins = dict((("0", 0.), ("1", 1.)))
+        actual_bins = dict((*expected_bins.items(),))
         self.assertEqual(
             FreqDist.jensen_shannon_distance(expected_bins, actual_bins), 0.)
 
-        actual_bins = (("0", 1.), ("1", 0.))
+        actual_bins = dict((("0", 1.), ("1", 0.)))
         self.assertEqual(
             FreqDist.jensen_shannon_distance(expected_bins, actual_bins), 1.)
 
@@ -647,4 +647,4 @@ class FreqDistTestSuite(unittest.TestCase):
             rand_idx = randrange(len(TD.UNIFORM_TUPLE))
             samples[rand_idx][1] += 1
         uniform_freqdist = FreqDist(samples)
-        self.assertAlmostEqual(0., freqdist.similarity(uniform_freqdist), 2)
+        self.assertLess(0., freqdist.similarity(uniform_freqdist), .05)
