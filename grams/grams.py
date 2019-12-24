@@ -26,7 +26,7 @@ __all__ = ["Gram", "Histogram", "Listogram", "Dictogram"]
 
 class Gram(FreqDist):  #, metaclass=LogMethodCalls, logs_size=4):
     """This histogram holds outcomes and frequencies that have been clumped into
-    bins by the parent class, FreqDist. 
+    bins by the parent class, FreqDist.
 
     Args:
         data_frequency: This represents the input to a probability distribution
@@ -305,4 +305,10 @@ class Covergram(Gram, metaclass=LogMethodCalls, logs_size=4):
 
 
 class Fuzzygram(Gram, metaclass=LogMethodCalls, logs_size=4):
+    pass
+
+class Chromagram(Gram, metaclass=LogMethodCalls, logs_size=4):
+    pass
+
+class Spectrogram(Gram,  metaclass=LogMethodCalls, logs_size=4):
     pass
