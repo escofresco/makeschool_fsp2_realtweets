@@ -25,13 +25,12 @@ __all__ = ["Gram", "Histogram", "Listogram", "Dictogram"]
 
 
 class Gram(FreqDist):  #, metaclass=LogMethodCalls, logs_size=4):
-    """This is a generic histogram which holds a distribution of data, which
-    have been clumped into bins by the parent class, FreqDist. Bins are aligned
-    in two dimensions, data and frequency, where frequency is calculated from
-    data.
+    """This histogram holds outcomes and frequencies that have been clumped into
+    bins by the parent class, FreqDist. 
 
     Args:
-        data: This represents the input to a probability distribution function.
+        data_frequency: This represents the input to a probability distribution
+        function.
     """
     __slots__ = ("data_frequency", "sampler")
 
@@ -77,7 +76,8 @@ class Gram(FreqDist):  #, metaclass=LogMethodCalls, logs_size=4):
 
     @staticmethod
     def sents(block_text):
-        """Convert multiline text into an array of sentences.
+        """Convert multiline text into an array of sentences, where each
+        sentence is an array of words.
 
         Args:
             block_text (str): Can be any string.
@@ -90,8 +90,8 @@ class Gram(FreqDist):  #, metaclass=LogMethodCalls, logs_size=4):
 
     @staticmethod
     def pos_sents(block_text):
-        """Convert multiline text into an array of sentences, with each word tagged
-        with part of speech.
+        """Convert multiline text into an array of sentences, with each word
+        tagged by part of speech.
 
         Args:
             block_text (str): Can be any string.
@@ -127,22 +127,6 @@ class Histogram(Gram, metaclass=LogMethodCalls, logs_size=4):
     def _make_token_freq(self, corpus, use_pos_tags):
         yield from Gram.pos_sents(corpus) if use_pos_tags else Gram.sents(
             corpus)
-
-    def frequency(self, token):
-        self.rebuild_with_latent_wordcounts()
-        try:
-            return super().freq(token)
-        except:
-            raise
-
-    def sample(self):
-        """Return a word from this histogram, randomly sampled by weighting
-        each word's probability of being chosen by its observed frequency."""
-        self.rebuild_with_latent_wordcounts()
-        try:
-            return super().sampler.randbin()
-        except:
-            raise
 
 
 class Listogram(Gram, metaclass=LogMethodCalls, logs_size=4):
