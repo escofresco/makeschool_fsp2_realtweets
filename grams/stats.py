@@ -655,8 +655,12 @@ class FreqDist(Distro):
         """
         for outcome, freq in (self.bins.items()
                               if Distro.is_mapping(self.dtype) else self.bins):
-            outcome = str(outcome)
-            yield (outcome + " " * (max_len - len(outcome)),
+
+            if type(outcome) is str:
+                # since len(outcome) has to be normalized, strings are
+                # padded with whitespace.
+                outcome += " " * (max_len - len(outcome))
+            yield (outcome,
                    Fraction(freq, self.token_count))
 
     def prob(self, bin):
@@ -685,9 +689,11 @@ class FreqDist(Distro):
             float ∈ [1., 0.]
         """
         max_len = max(self.max_token_str_len, other.max_token_str_len)
+        self_padded_bins = dict(self.padded_bins(max_len))
+        other_padded_bins = dict(other.padded_bins(max_len))
 
-        return FreqDist.jensen_shannon_distance(self.padded_bins(max_len),
-                                                other.padded_bins(max_len))
+        return FreqDist.jensen_shannon_distance(self_padded_bins,
+                                                other_padded_bins)
 
     @staticmethod
     def jensen_shannon_distance(first_bins, second_bins):
@@ -709,8 +715,10 @@ class FreqDist(Distro):
             https://en.wikipedia.org/wiki/Jensen%E2%80%93Shannon_divergence
         """
         return jensen_shannon_divergence(
-            [Distribution(dict(first_bins)),
-             Distribution(dict(second_bins))]) ** .5
+            [Distribution(first_bins),
+             Distribution(second_bins)])**.5
+
+
 
     @staticmethod
     def cast(obj, target, default=None):
@@ -814,6 +822,7 @@ class Sample:
             prob[small.pop()[1]] = 1
 
         return tuple(alias), tuple(prob)
+
 
     def rand(self):
         """Generation step: calculate the index to an element.
