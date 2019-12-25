@@ -9,8 +9,8 @@ from flask import Flask, url_for
 from grams.grams import Histogram
 from grams.markov import MC
 
-
 import time
+
 
 def make_app():
 
@@ -21,6 +21,7 @@ def make_app():
             def _generate():
                 markovchain = MC(corpus)
                 return markovchain.generate
+
             generate = _generate()
 
             child_conn.send(generate(n_sentences))
@@ -30,7 +31,6 @@ def make_app():
                     ## previously sent message got consumed
                     # send another
                     child_conn.send(generate(n_sentences))
-
 
         parent_conn, child_conn = Pipe(duplex=True)
 
