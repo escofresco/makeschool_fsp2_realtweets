@@ -16,6 +16,7 @@ Attributes:
 """
 from array import array
 from collections import Counter, defaultdict, namedtuple
+from copy import deepcopy
 from fractions import Fraction
 from functools import lru_cache
 from random import choice, random, randrange
@@ -169,7 +170,7 @@ class Distro:
                     return i
 
     def show(self):
-        """Visualize the data contained within this class.
+        """Visualizes the data contained within the current object.
 
         Raises:
             MissingDataError: self.bins is empty, so there's nothing to show.
@@ -660,8 +661,7 @@ class FreqDist(Distro):
                 # since len(outcome) has to be normalized, strings are
                 # padded with whitespace.
                 outcome += " " * (max_len - len(outcome))
-            yield (outcome,
-                   Fraction(freq, self.token_count))
+            yield (outcome, Fraction(freq, self.token_count))
 
     def prob(self, bin):
         """Lookup the type and frequency at bin and return it's probability.
@@ -717,8 +717,6 @@ class FreqDist(Distro):
         return jensen_shannon_divergence(
             [Distribution(first_bins),
              Distribution(second_bins)])**.5
-
-
 
     @staticmethod
     def cast(obj, target, default=None):
@@ -822,7 +820,6 @@ class Sample:
             prob[small.pop()[1]] = 1
 
         return tuple(alias), tuple(prob)
-
 
     def rand(self):
         """Generation step: calculate the index to an element.

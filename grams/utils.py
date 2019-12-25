@@ -10,7 +10,6 @@ from time import time
 
 from .online import Avg
 
-
 __all__ = [
     "LogMethodCalls", "sample_size", "is_binary_format", "map_to_binary",
     "invert_dict", "randints", "rand_word_distro", "binsearch",
@@ -243,8 +242,6 @@ def capture_stdout(func, *args, **kwargs):
     return sio.getvalue()
 
 
-
-
 def generate_samples(n_samples, func, *args, **kwargs):
     """Call a function a bunch of times and count the results.
 
@@ -262,6 +259,7 @@ def generate_samples(n_samples, func, *args, **kwargs):
         res = func(*args, **kwargs)
         samples[res] += 1
     return samples
+
 
 def recur_chmod(dir, *modes):
     """Take a directory and variable number of arguments for mode (a file can

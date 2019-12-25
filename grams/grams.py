@@ -307,8 +307,10 @@ class Covergram(Gram, metaclass=LogMethodCalls, logs_size=4):
 class Fuzzygram(Gram, metaclass=LogMethodCalls, logs_size=4):
     pass
 
+
 class Chromagram(Gram, metaclass=LogMethodCalls, logs_size=4):
     pass
 
-class Spectrogram(Gram,  metaclass=LogMethodCalls, logs_size=4):
+
+class Spectrogram(Gram, metaclass=LogMethodCalls, logs_size=4):
     pass

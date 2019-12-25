@@ -22,6 +22,7 @@ from .utils import capture_stdout
 
 __all__ = ["Markov", "MC", "HMM"]
 
+
 class Markov:
     """Base class for Markov Model implementations which enforces three
     assumptions:
@@ -41,8 +42,6 @@ class Markov:
         https://learning.oreilly.com/library/view/markov-processes-for/9780124077959/xhtml/CHP014.html
     """
     __slots__ = ()
-
-
 
 
 class MC(Markov):
@@ -78,7 +77,8 @@ class MC(Markov):
     .. _visible transitions between states that we can't control
         https://learning.oreilly.com/library/view/markov-processes-for/9780124077959/xhtml/CHP014.html
     """
-    __slots__ = ("order", "memory", "use_pos", "start_token", "stop_token", "start_state", "chain")
+    __slots__ = ("order", "memory", "use_pos", "start_token", "stop_token",
+                 "start_state", "chain")
 
     START_TOKEN = "<|~~START~~|>"
     STOP_TOKEN = "<|~~STOP~~|>"
@@ -95,7 +95,7 @@ class MC(Markov):
             self.start_token = (self.start_token, self.start_token)
             self.stop_token = (self.stop_token, self.stop_token)
 
-        self.start_state = (self.start_token,)*(self.memory - 1)
+        self.start_state = (self.start_token,) * (self.memory - 1)
 
         # use the corpus and a word order
         self.chain = dict(self._make_chain(self._make_transitions(corpus)))
@@ -103,17 +103,21 @@ class MC(Markov):
     def __str__(self):
         res = []
         for state, transition_hist in self.chain.items():
-            res.extend((f"\n{'~'*10} {state} {'~'*10}", capture_stdout(transition_hist.show)))
+            res.extend((f"\n{'~'*10} {state} {'~'*10}",
+                        capture_stdout(transition_hist.show)))
         return "\n".join(res)
 
     def __getstate__(self):
         """Overrides pickle magic."""
+
         def make_attrs():
             for attr in MC.__slots__:
                 val = getattr(self, attr)
                 if attr is "chain":
                     # dictionary has to be converted to tuple
-                    yield (attr, dict((state, transition.bins) for state, transition in val.items()))
+                    yield (attr,
+                           dict((state, transition.bins)
+                                for state, transition in val.items()))
                 else:
                     yield attr, val
 
@@ -142,10 +146,12 @@ class MC(Markov):
         # beginning of each iteration, don't add the last two.
         cache = deque(self.start_state[:-1], maxlen=self.memory)
 
-        for sentence in (Gram.pos_sents(corpus) if self.use_pos else Gram.sents(corpus)):
+        for sentence in (Gram.pos_sents(corpus)
+                         if self.use_pos else Gram.sents(corpus)):
             ## Depending on if pos_tags are being used, look through either
             ## (token, pos) pairs or just the tokens
-            for word_pos in chain((self.start_token,), sentence, (self.stop_token,)):
+            for word_pos in chain((self.start_token,), sentence,
+                                  (self.stop_token,)):
                 cache.append(word_pos)
                 if len(cache) == self.memory:
                     ## cache is full
@@ -189,7 +195,8 @@ class MC(Markov):
         Returns:
             (str)
         """
-        sentence = (token[0] if self.use_pos else token for token in self._generate_sentence())
+        sentence = (token[0] if self.use_pos else token
+                    for token in self._generate_sentence())
         return TreebankWordDetokenizer().detokenize(sentence)
 
     def generate(self, n_sentences):
