@@ -107,32 +107,6 @@ class MC(Markov):
                         capture_stdout(transition_hist.show)))
         return "\n".join(res)
 
-    def __getstate__(self):
-        """Overrides pickle magic."""
-
-        def make_attrs():
-            for attr in MC.__slots__:
-                val = getattr(self, attr)
-                if attr is "chain":
-                    # dictionary has to be converted to tuple
-                    yield (attr,
-                           dict((state, transition.bins)
-                                for state, transition in val.items()))
-                else:
-                    yield attr, val
-
-        #return (None, tuple(make_attrs())) #tuple(make_attrs())
-        return dict(make_attrs())
-
-    def __setstate__(self, state):
-        """Overrides pickle magic."""
-        state = state
-        for attr, val in state.items():
-            if attr is "chain":
-                self.chain = self._make_chain(val)
-            else:
-                setattr(self, attr, val)
-
     def __eq__(self, other):
         for attr in MC.__slots__:
             if getattr(self, attr) != getattr(other, attr):
@@ -262,7 +236,6 @@ class HMM(Markov):
 
 
 if __name__ == "__main__":
-    from pprint import pprint
     txt = """Arfool is the best atrese I've ever tasted.
             Yea, I need to blash arfool.
             """
