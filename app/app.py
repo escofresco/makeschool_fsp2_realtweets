@@ -1,9 +1,11 @@
 import marshal
 from multiprocessing import Condition, Process, Queue, Pipe
+import os
 from threading import Timer
 from types import FunctionType
 import pickle
 
+from celery import Celery
 from flask import Flask, url_for
 
 from grams.grams import Histogram
@@ -41,18 +43,20 @@ def make_app():
 
         return parent_conn, make_process
 
-    app = Flask(__name__)
+    # init app
+    flask_app = Flask(__name__)
     parent_conn, make_process = make_model()
 
-    @app.route("/")
+    @flask_app.route("/")
     def home():
         if parent_conn.poll():
             return parent_conn.recv()
         return "loading..."
 
-    return app
+    return flask_app
 
+
+flask_app = make_app()
 
 if __name__ == "__main__":
-    app = make_app()
-    app.run(debug=True, port=8080)
+    flask_app.run(debug=True, port=8080)
