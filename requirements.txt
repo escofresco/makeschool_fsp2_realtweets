@@ -8,7 +8,7 @@ celery==4.4.0
 certifi==2019.9.11
 chardet==3.0.4
 Click==7.0
-codecov==2.0.15
+codecov==2.0.16
 colorama==0.4.1
 contextlib2==0.6.0.post1
 coverage==4.5.4
